@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
 import { getRecommendedFoods, HEALTH_GOALS } from '../services/foodRecommender';
-import { Sparkles, Plus, ShieldAlert, Target, HeartPulse, CheckCircle2 } from 'lucide-react';
+import { Sparkles, Plus, ShieldAlert, Target, TrendingDown, Scale, TrendingUp } from 'lucide-react';
 
 export default function FoodRecommenderView({
   currentIntake,
   driTargets,
   profileDiet = 'veg',
+  weightGoal = 'maintain',
   onAddFoodToLog
 }) {
   const [activeGoalId, setActiveGoalId] = useState('hair_fall'); // Default health focus
   const [activeSubFilter, setActiveSubFilter] = useState(profileDiet);
 
-  const result = getRecommendedFoods(currentIntake, driTargets, activeSubFilter, activeGoalId);
+  const result = getRecommendedFoods(currentIntake, driTargets, activeSubFilter, activeGoalId, weightGoal);
   const { deficits, recommendations, activeGoal } = result;
 
   // Determine eligible diet filter options strictly based on user's profile diet
@@ -38,13 +39,29 @@ export default function FoodRecommenderView({
       
       {/* Header Card */}
       <div className="glass-card p-4 rounded-2xl border border-slate-800 bg-gradient-to-br from-emerald-950/40 via-slate-900 to-slate-900">
-        <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold mb-1">
-          <Sparkles className="w-4 h-4" />
-          <span>SMART HEALTH GOAL & NUTRIENT OPTIMIZER</span>
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold">
+            <Sparkles className="w-4 h-4" />
+            <span>CALORIE-EFFICIENT NUTRIENT OPTIMIZER</span>
+          </div>
+
+          {/* Active Weight Goal Pill */}
+          <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${
+            weightGoal === 'loss' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' :
+            weightGoal === 'gain' ? 'bg-teal-500/20 text-teal-300 border-teal-500/40' :
+            'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+          }`}>
+            {weightGoal === 'loss' ? '📉 Weight Loss Mode' : weightGoal === 'gain' ? '📈 Weight Gain Mode' : '⚖️ Maintenance Mode'}
+          </span>
         </div>
-        <h2 className="text-xl font-extrabold text-slate-100">Personalized Food Recommendations</h2>
+
+        <h2 className="text-xl font-extrabold text-slate-100">Calorie-Efficient Food Recommendations</h2>
         <p className="text-xs text-slate-400 mt-1">
-          Common, practical daily foods prioritized for your selected health focus & active DRI gaps.
+          {weightGoal === 'loss'
+            ? 'Foods ranked to deliver maximum micronutrients & protein with the least possible calories.'
+            : weightGoal === 'gain'
+            ? 'Nutrient-dense foods prioritized for clean caloric surplus & muscle gain.'
+            : 'Balanced foods ranked by maximum nutrient-to-calorie efficiency.'}
         </p>
 
         {/* HEALTH FOCUS / GOAL TARGETER SELECTOR */}
@@ -136,8 +153,9 @@ export default function FoodRecommenderView({
 
       {/* Recommended Practical Foods */}
       <div className="space-y-3">
-        <h3 className="text-sm font-bold text-slate-300 px-1">
-          Practical Daily Food Recommendations
+        <h3 className="text-sm font-bold text-slate-300 px-1 flex items-center justify-between">
+          <span>Least Calories, Max Nutrients Picks</span>
+          <span className="text-[10px] text-emerald-400 font-semibold">Ranked by Caloric Efficiency</span>
         </h3>
 
         {recommendations.map((food) => (
@@ -152,11 +170,9 @@ export default function FoodRecommenderView({
               <div>
                 <div className="flex items-center gap-2">
                   <h4 className="font-bold text-slate-100 text-sm">{food.name}</h4>
-                  {food.practicalDaily && (
-                    <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] font-bold">
-                      Daily Staple
-                    </span>
-                  )}
+                  <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-extrabold">
+                    {food.nutrientsPer100g.calories} kcal / 100g
+                  </span>
                 </div>
                 <p className="text-xs text-slate-400">{food.servingUnit} ({food.category})</p>
 

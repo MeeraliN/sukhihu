@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Activity, CheckCircle2, ShieldCheck, Globe, Crown } from 'lucide-react';
+import { User, Activity, CheckCircle2, Globe, Crown, TrendingDown, Scale, TrendingUp } from 'lucide-react';
 import { CURRENCIES, getActiveCurrency, setActiveCurrency } from '../services/subscriptionService';
 import { calculateDRI } from '../services/driCalculator';
 
@@ -10,6 +10,7 @@ export default function ProfileModal({ onClose, profile, onUpdateProfile, trialS
   const [sex, setSex] = useState(profile.sex);
   const [activityLevel, setActivityLevel] = useState(profile.activityLevel);
   const [dietaryPreference, setDietaryPreference] = useState(profile.dietaryPreference);
+  const [weightGoal, setWeightGoal] = useState(profile.weightGoal || 'maintain');
   const [selectedCurrency, setSelectedCurrency] = useState(getActiveCurrency());
 
   const handleSave = () => {
@@ -20,6 +21,7 @@ export default function ProfileModal({ onClose, profile, onUpdateProfile, trialS
       sex,
       activityLevel,
       dietaryPreference,
+      weightGoal,
       lifeStage: profile.lifeStage || 'standard'
     };
 
@@ -56,6 +58,31 @@ export default function ProfileModal({ onClose, profile, onUpdateProfile, trialS
         {/* Form Fields */}
         <div className="space-y-4 my-3 text-xs">
           
+          {/* Weight Goal Selector */}
+          <div>
+            <label className="font-semibold text-amber-400 mb-1 block">Weight Goal Strategy</label>
+            <div className="grid grid-cols-3 gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
+              {[
+                { id: 'loss', label: '📉 Loss' },
+                { id: 'maintain', label: '⚖️ Maintain' },
+                { id: 'gain', label: '📈 Gain' }
+              ].map(g => (
+                <button
+                  key={g.id}
+                  type="button"
+                  onClick={() => setWeightGoal(g.id)}
+                  className={`py-2 rounded-lg font-bold text-center transition ${
+                    weightGoal === g.id
+                      ? 'bg-amber-500 text-slate-950 font-black shadow'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {g.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Sex Selection */}
           <div>
             <label className="font-semibold text-slate-300 mb-1 block">Biological Sex</label>

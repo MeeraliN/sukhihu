@@ -2,7 +2,6 @@ import { USDA_DATABASE } from './usdaDatabase';
 
 /**
  * Health Goal Nutrient Mappings
- * Defines target micronutrients boosted when user chooses a specific health goal / focus area.
  */
 export const HEALTH_GOALS = [
   {
@@ -50,11 +49,12 @@ export const HEALTH_GOALS = [
 ];
 
 /**
- * Smart Nutrient Gap Optimizer & Food Recommender
+ * Calorie-Efficiency Nutrient Optimizer & Food Recommender
  * Strictly filters foods by dietary preference (Veg users NEVER see Non-Veg/Egg options).
- * Boosts priorities based on selected Health Goal (Hair fall, Acne, Energy, etc.).
+ * Ranks foods based on Nutrient-to-Calorie Ratio (Max nutrients for least calories).
+ * Tailors scoring to Weight Goal: Loss (caloric deficit efficiency) vs Gain (calorie-dense clean nutrition).
  */
-export function getRecommendedFoods(currentIntake, driTargets, dietFilter = 'veg', activeGoalId = null) {
+export function getRecommendedFoods(currentIntake, driTargets, dietFilter = 'veg', activeGoalId = null, weightGoal = 'maintain') {
   if (!currentIntake || !driTargets) return { deficits: [], recommendations: [] };
 
   // 1. Filter USDA database strictly by user's active dietary choice
@@ -85,22 +85,18 @@ export function getRecommendedFoods(currentIntake, driTargets, dietFilter = 'veg
     }
   });
 
-  // Sort deficit nutrients by lowest percentage achieved first
   deficitNutrients.sort((a, b) => a.percentageAchieved - b.percentageAchieved);
 
   // 3. Find active health goal object if selected
   const activeGoal = HEALTH_GOALS.find(g => g.id === activeGoalId);
   const goalBoostKeys = activeGoal ? activeGoal.boostNutrients : [];
 
-  // 4. Score each food based on:
-  // - Closing active nutrient deficits
-  // - Matching active health goal boost nutrients
-  // - Practicality score (common daily achievable foods)
+  // 4. Score each food based on CALORIC EFFICIENCY & NUTRIENT DENSITY
   const scoredFoods = eligibleFoods.map(food => {
-    let score = 0;
+    let nutrientFillPoints = 0;
     const keyBenefits = [];
 
-    // Goal Boost Weighting
+    // Health Goal Boost Points
     if (goalBoostKeys.length > 0) {
       goalBoostKeys.forEach(gKey => {
         const valInFood = food.nutrientsPer100g[gKey] || 0;
@@ -108,14 +104,14 @@ export function getRecommendedFoods(currentIntake, driTargets, dietFilter = 'veg
         const pctContrib = (valInFood / targetVal) * 100;
         
         if (pctContrib >= 8) {
-          score += pctContrib * 3.5; // High priority boost for goal!
+          nutrientFillPoints += pctContrib * 4.0;
           const label = driTargets[gKey]?.label || gKey;
-          keyBenefits.push(`Target for ${activeGoal.name}: Rich in ${label}`);
+          keyBenefits.push(`For ${activeGoal.name}: Rich in ${label}`);
         }
       });
     }
 
-    // Deficit Gap Weighting
+    // Deficit Gap Fill Points
     deficitNutrients.forEach(def => {
       const valInFood = food.nutrientsPer100g[def.key] || 0;
       if (valInFood > 0) {
@@ -123,25 +119,45 @@ export function getRecommendedFoods(currentIntake, driTargets, dietFilter = 'veg
         const contribution = (valInFood / (driTargets[def.key]?.target || 1)) * 100;
         
         if (contribution >= 5) {
-          score += contribution * urgencyWeight;
+          nutrientFillPoints += contribution * urgencyWeight;
           keyBenefits.push(`Fills ${def.label} (+${valInFood}${def.unit})`);
         }
       }
     });
 
-    // Practicality bonus for common daily achievable foods
+    const cals100g = Math.max(15, food.nutrientsPer100g.calories);
+
+    // CALORIE EFFICIENCY FORMULA
+    // Nutrient Density Ratio = Total Fill Points / Calories per 100g
+    let finalScore = 0;
+    const nutrientDensityRatio = (nutrientFillPoints / cals100g) * 10;
+
+    if (weightGoal === 'loss') {
+      // WEIGHT LOSS MODE: Maximum nutrients per calorie (penalize heavy calories)
+      finalScore = nutrientDensityRatio * 15 + (300 - cals100g) * 0.1;
+      keyBenefits.unshift(`🔥 Max Nutrients for ${food.nutrientsPer100g.calories} kcal/100g`);
+    } else if (weightGoal === 'gain') {
+      // WEIGHT GAIN MODE: High clean nutrient fill + clean caloric density
+      finalScore = nutrientFillPoints * 1.2 + (cals100g * 0.2);
+      keyBenefits.unshift(`💪 Clean Caloric & Nutrient Surplus (${food.nutrientsPer100g.calories} kcal)`);
+    } else {
+      // MAINTENANCE MODE: Balanced nutrient efficiency
+      finalScore = nutrientDensityRatio * 8 + nutrientFillPoints * 0.5;
+      keyBenefits.unshift(`⚡ High Calorie-to-Nutrient Efficiency`);
+    }
+
     if (food.practicalDaily) {
-      score += 15;
+      finalScore += 20; // Daily staple practicality bonus
     }
 
     return {
       ...food,
-      score,
+      score: finalScore,
+      nutrientDensityRatio: Math.round(nutrientDensityRatio * 10) / 10,
       benefits: Array.from(new Set(keyBenefits)).slice(0, 3)
     };
   });
 
-  // Sort foods by score descending
   scoredFoods.sort((a, b) => b.score - a.score);
 
   return {

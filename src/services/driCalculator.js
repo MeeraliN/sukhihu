@@ -1,7 +1,7 @@
 /**
  * USDA / National Academy of Medicine (NAM) Dietary Reference Intakes (DRI) Calculator
  * Computes exact daily targets for 40+ macronutrients, vitamins, and minerals
- * based on Height, Weight, Age, Sex, Life Stage, and Activity Level.
+ * based on Height, Weight, Age, Sex, Life Stage, Activity Level, and Weight Goal.
  */
 
 export function calculateDRI(profile) {
@@ -11,7 +11,8 @@ export function calculateDRI(profile) {
     age = 28,
     sex = 'male', // 'male' | 'female'
     lifeStage = 'standard', // 'standard' | 'pregnant' | 'lactating'
-    activityLevel = 'moderate' // 'sedentary' | 'light' | 'moderate' | 'active' | 'extra'
+    activityLevel = 'moderate', // 'sedentary' | 'light' | 'moderate' | 'active' | 'extra'
+    weightGoal = 'maintain' // 'loss' | 'maintain' | 'gain'
   } = profile;
 
   // 1. Calculate Basal Metabolic Rate (BMR) using Mifflin-St Jeor Equation
@@ -32,17 +33,28 @@ export function calculateDRI(profile) {
   };
 
   const activityFactor = activityMultipliers[activityLevel] || 1.55;
-  let calories = Math.round(bmr * activityFactor);
+  let maintenanceCalories = Math.round(bmr * activityFactor);
 
-  if (lifeStage === 'pregnant') calories += 340;
-  if (lifeStage === 'lactating') calories += 450;
+  if (lifeStage === 'pregnant') maintenanceCalories += 340;
+  if (lifeStage === 'lactating') maintenanceCalories += 450;
 
-  // 3. Protein scaling (1.2g to 2.0g per kg depending on activity)
-  const proteinPerKg = activityLevel === 'sedentary' ? 1.0 : (activityLevel === 'active' || activityLevel === 'extra') ? 1.8 : 1.4;
+  // 3. Weight Goal Calorie Adjustment
+  let calories = maintenanceCalories;
+  if (weightGoal === 'loss') {
+    calories = Math.round(maintenanceCalories * 0.80); // ~20% deficit (~500 kcal)
+  } else if (weightGoal === 'gain') {
+    calories = Math.round(maintenanceCalories * 1.18); // ~18% surplus (~450 kcal)
+  }
+
+  // 4. Protein scaling (1.2g to 2.2g per kg depending on activity and goal)
+  let proteinPerKg = activityLevel === 'sedentary' ? 1.0 : (activityLevel === 'active' || activityLevel === 'extra') ? 1.8 : 1.4;
+  if (weightGoal === 'loss') proteinPerKg += 0.3; // Higher protein preserves muscle in deficit
+  if (weightGoal === 'gain') proteinPerKg += 0.4; // Higher protein fuels muscle synthesis
+
   let protein = Math.round(weightKg * proteinPerKg);
   if (lifeStage === 'pregnant' || lifeStage === 'lactating') protein += 25;
 
-  // 4. Carbs & Fats
+  // 5. Carbs & Fats
   const carbCalories = calories * 0.50; // 50%
   const carbs = Math.round(carbCalories / 4);
   const fiber = Math.round((calories / 1000) * 14); // 14g per 1000 kcal
@@ -60,7 +72,7 @@ export function calculateDRI(profile) {
 
   return {
     // === MACRONUTRIENTS ===
-    calories: { target: calories, unit: 'kcal', label: 'Calories', cat: 'macro' },
+    calories: { target: calories, maintenanceCalories, weightGoal, unit: 'kcal', label: 'Daily Calories', cat: 'macro' },
     protein: { target: protein, unit: 'g', label: 'Protein', cat: 'macro' },
     carbs: { target: carbs, unit: 'g', label: 'Carbohydrates', cat: 'macro' },
     fiber: { target: fiber, unit: 'g', label: 'Dietary Fiber', cat: 'macro' },

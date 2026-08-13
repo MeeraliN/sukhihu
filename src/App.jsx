@@ -156,6 +156,7 @@ export default function App() {
             currentIntake={currentIntake}
             driTargets={driTargets}
             profileDiet={profile.dietaryPreference}
+            weightGoal={profile.weightGoal || 'maintain'}
             onAddFoodToLog={handleAddFoodToLog}
           />
         )}

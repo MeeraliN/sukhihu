@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Activity, Heart, User, ChevronRight, CheckCircle2, Leaf, Flame, Sparkles } from 'lucide-react';
+import { Activity, Heart, User, ChevronRight, CheckCircle2, Sparkles, TrendingDown, Scale, TrendingUp } from 'lucide-react';
 import { calculateDRI } from '../services/driCalculator';
 
 export default function OnboardingWizard({ onComplete }) {
@@ -19,6 +19,7 @@ export default function OnboardingWizard({ onComplete }) {
   const [lifeStage, setLifeStage] = useState('standard');
   const [activityLevel, setActivityLevel] = useState('moderate');
   const [dietaryPreference, setDietaryPreference] = useState('veg'); // 'veg' | 'vegan' | 'non-veg' | 'eggetarian'
+  const [weightGoal, setWeightGoal] = useState('maintain'); // 'loss' | 'maintain' | 'gain'
 
   const handleFinish = () => {
     // Calculate final metrics in metric
@@ -32,7 +33,8 @@ export default function OnboardingWizard({ onComplete }) {
       sex,
       lifeStage,
       activityLevel,
-      dietaryPreference
+      dietaryPreference,
+      weightGoal
     };
 
     const computedDRI = calculateDRI(profileData);
@@ -56,7 +58,7 @@ export default function OnboardingWizard({ onComplete }) {
             </div>
           </div>
           <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-            Step {step} of 3
+            Step {step} of 4
           </span>
         </div>
 
@@ -64,7 +66,7 @@ export default function OnboardingWizard({ onComplete }) {
         <div className="w-full bg-slate-800/80 h-1.5 rounded-full overflow-hidden mb-6">
           <div
             className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full transition-all duration-300"
-            style={{ width: `${(step / 3) * 100}%` }}
+            style={{ width: `${(step / 4) * 100}%` }}
           />
         </div>
 
@@ -196,8 +198,62 @@ export default function OnboardingWizard({ onComplete }) {
           </div>
         )}
 
-        {/* STEP 2: Activity & Life Stage */}
+        {/* STEP 2: Weight Goal Selection */}
         {step === 2 && (
+          <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div>
+              <h2 className="text-xl font-bold text-slate-100">Your Weight Goal</h2>
+              <p className="text-xs text-slate-400 mt-1">
+                Food recommendations will prioritize maximum nutrient density based on your calorie strategy.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {[
+                {
+                  id: 'loss',
+                  title: '📉 Weight Loss (Caloric Deficit)',
+                  icon: TrendingDown,
+                  color: 'text-amber-400 border-amber-500/40 bg-amber-500/10',
+                  desc: 'Prioritizes maximum vitamins & minerals with the lowest possible calories (~20% deficit).'
+                },
+                {
+                  id: 'maintain',
+                  title: '⚖️ Weight Maintenance',
+                  icon: Scale,
+                  color: 'text-emerald-400 border-emerald-500/40 bg-emerald-500/10',
+                  desc: 'Maintains healthy energy balance & optimal nutrient density baseline.'
+                },
+                {
+                  id: 'gain',
+                  title: '📈 Weight Gain / Muscle Growth',
+                  icon: TrendingUp,
+                  color: 'text-teal-400 border-teal-500/40 bg-teal-500/10',
+                  desc: 'Prioritizes nutrient-rich, calorie-dense foods for clean surplus fuel (~18% surplus).'
+                }
+              ].map((goal) => (
+                <div
+                  key={goal.id}
+                  onClick={() => setWeightGoal(goal.id)}
+                  className={`p-4 rounded-xl border cursor-pointer transition flex items-start gap-3 ${
+                    weightGoal === goal.id
+                      ? 'bg-emerald-500/15 border-emerald-500 text-slate-100 shadow-md shadow-emerald-500/10'
+                      : 'bg-slate-900 border-slate-800 text-slate-400'
+                  }`}
+                >
+                  <div className="flex-1">
+                    <div className="text-sm font-bold text-slate-200">{goal.title}</div>
+                    <div className="text-xs text-slate-400 mt-0.5">{goal.desc}</div>
+                  </div>
+                  {weightGoal === goal.id && <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* STEP 3: Activity & Life Stage */}
+        {step === 3 && (
           <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-300">
             <div>
               <h2 className="text-xl font-bold text-slate-100">Activity & Energy</h2>
@@ -264,8 +320,8 @@ export default function OnboardingWizard({ onComplete }) {
           </div>
         )}
 
-        {/* STEP 3: Strict Dietary Choice */}
-        {step === 3 && (
+        {/* STEP 4: Strict Dietary Choice */}
+        {step === 4 && (
           <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-300">
             <div>
               <h2 className="text-xl font-bold text-slate-100">Dietary Preferences</h2>
@@ -310,7 +366,7 @@ export default function OnboardingWizard({ onComplete }) {
 
       {/* Bottom Action Button */}
       <div className="pt-4 pb-2">
-        {step < 3 ? (
+        {step < 4 ? (
           <button
             type="button"
             onClick={() => setStep(step + 1)}
@@ -326,7 +382,7 @@ export default function OnboardingWizard({ onComplete }) {
             className="w-full py-3.5 px-4 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-bold rounded-xl shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-2 transition active:scale-[0.98]"
           >
             <CheckCircle2 className="w-5 h-5" />
-            <span>Generate My Daily DRI Targets</span>
+            <span>Generate Calorie-Efficient DRI Targets</span>
           </button>
         )}
       </div>
