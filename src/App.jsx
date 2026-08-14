@@ -12,17 +12,20 @@ import FoodSearchModal from './components/FoodSearchModal';
 import ProfileModal from './components/ProfileModal';
 import PaywallModal from './components/PaywallModal';
 import PaymentCheckoutModal from './components/PaymentCheckoutModal';
+import WaterTrackerModal from './components/WaterTrackerModal';
 import MealLogHistory from './components/MealLogHistory';
 import BottomNav from './components/BottomNav';
 import DesktopSidebar from './components/DesktopSidebar';
 
 const STORAGE_KEY_PROFILE = 'sukhihu_user_profile';
 const STORAGE_KEY_LOGS = 'sukhihu_daily_meal_logs';
+const STORAGE_KEY_WATER = 'sukhihu_daily_water_ml';
 
 export default function App() {
   const [profile, setProfile] = useState(null);
   const [driTargets, setDriTargets] = useState(null);
   const [mealLogs, setMealLogs] = useState([]);
+  const [loggedWaterMl, setLoggedWaterMl] = useState(0);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [trialStatus, setTrialStatus] = useState(getTrialStatus());
 
@@ -32,9 +35,10 @@ export default function App() {
   const [showProfile, setShowProfile] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
+  const [showWaterModal, setShowWaterModal] = useState(false);
   const [checkoutCurrency, setCheckoutCurrency] = useState(getActiveCurrency());
 
-  // 1. Load saved profile & meal logs on mount
+  // 1. Load saved profile, meal logs, and water intake on mount
   useEffect(() => {
     const savedProfStr = localStorage.getItem(STORAGE_KEY_PROFILE);
     if (savedProfStr) {
@@ -54,6 +58,11 @@ export default function App() {
       } catch {
         // Fallback
       }
+    }
+
+    const savedWater = localStorage.getItem(STORAGE_KEY_WATER);
+    if (savedWater) {
+      setLoggedWaterMl(Number(savedWater) || 0);
     }
 
     // Register Service Worker for PWA
@@ -108,18 +117,25 @@ export default function App() {
     localStorage.setItem(STORAGE_KEY_LOGS, JSON.stringify(updatedLogs));
   };
 
+  // Water Intake Logging
+  const handleLogWater = (addedMl) => {
+    const newTotal = loggedWaterMl + Number(addedMl);
+    setLoggedWaterMl(newTotal);
+    localStorage.setItem(STORAGE_KEY_WATER, newTotal.toString());
+  };
+
   // Aggregate daily nutrients from all logged meals
-  const currentIntake = {};
+  const currentIntake = { water: loggedWaterMl };
   if (driTargets) {
     Object.keys(driTargets).forEach(key => {
-      currentIntake[key] = 0;
+      if (key !== 'water') currentIntake[key] = 0;
     });
 
     mealLogs.forEach(log => {
       const scaleFactor = log.portionGram / 100;
       const nutrients = log.food.nutrientsPer100g || {};
       Object.keys(nutrients).forEach(key => {
-        if (currentIntake[key] !== undefined) {
+        if (currentIntake[key] !== undefined && key !== 'water') {
           currentIntake[key] += Math.round((nutrients[key] * scaleFactor) * 10) / 10;
         }
       });
@@ -131,10 +147,12 @@ export default function App() {
     return <OnboardingWizard onComplete={handleCompleteOnboarding} />;
   }
 
+  const waterTargetMl = driTargets?.water?.target || 3500;
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col md:flex-row relative">
       
-      {/* Desktop / Laptop Sidebar Navigation (Hidden on Mobile, Visible on md/lg screens) */}
+      {/* Desktop / Laptop Sidebar Navigation */}
       <DesktopSidebar
         activeTab={activeTab}
         onTabChange={(tab) => {
@@ -149,7 +167,7 @@ export default function App() {
         onOpenPaywall={() => setShowPaywall(true)}
       />
 
-      {/* Main Content Area (Cross-Platform Responsive Wrapper) */}
+      {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-h-screen max-w-4xl mx-auto w-full border-x border-slate-900 shadow-2xl">
         
         {/* Top Header */}
@@ -158,6 +176,9 @@ export default function App() {
           onOpenProfile={() => setShowProfile(true)}
           onOpenCamera={() => setShowCamera(true)}
           onOpenPaywall={() => setShowPaywall(true)}
+          onOpenWaterModal={() => setShowWaterModal(true)}
+          loggedWaterMl={loggedWaterMl}
+          waterTargetMl={waterTargetMl}
         />
 
         {/* Main Screen Router */}
@@ -207,7 +228,7 @@ export default function App() {
           )}
         </main>
 
-        {/* Mobile Navigation (Hidden on Desktop md+ screens) */}
+        {/* Mobile Navigation */}
         <div className="md:hidden">
           <BottomNav
             activeTab={activeTab}
@@ -225,6 +246,15 @@ export default function App() {
       </div>
 
       {/* MODALS */}
+      {showWaterModal && (
+        <WaterTrackerModal
+          onClose={() => setShowWaterModal(false)}
+          waterTargetMl={waterTargetMl}
+          loggedWaterMl={loggedWaterMl}
+          onLogWater={handleLogWater}
+        />
+      )}
+
       {showCamera && (
         <CameraScannerModal
           onClose={() => setShowCamera(false)}
