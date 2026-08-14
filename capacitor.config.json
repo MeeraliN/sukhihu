@@ -1,0 +1,14 @@
+{
+  "appId": "app.sukhihu.nutrition",
+  "appName": "sukhihu",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "Camera": {
+      "permissions": ["camera", "photos"]
+    }
+  }
+}

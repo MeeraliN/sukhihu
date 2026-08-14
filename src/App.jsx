@@ -6,6 +6,7 @@ import OnboardingWizard from './components/OnboardingWizard';
 import Header from './components/Header';
 import NutrientDashboard from './components/NutrientDashboard';
 import FoodRecommenderView from './components/FoodRecommenderView';
+import MealPlannerView from './components/MealPlannerView';
 import CameraScannerModal from './components/CameraScannerModal';
 import FoodSearchModal from './components/FoodSearchModal';
 import ProfileModal from './components/ProfileModal';
@@ -13,6 +14,7 @@ import PaywallModal from './components/PaywallModal';
 import PaymentCheckoutModal from './components/PaymentCheckoutModal';
 import MealLogHistory from './components/MealLogHistory';
 import BottomNav from './components/BottomNav';
+import DesktopSidebar from './components/DesktopSidebar';
 
 const STORAGE_KEY_PROFILE = 'sukhihu_user_profile';
 const STORAGE_KEY_LOGS = 'sukhihu_daily_meal_logs';
@@ -130,57 +132,10 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between max-w-md mx-auto relative border-x border-slate-900 shadow-2xl">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col md:flex-row relative">
       
-      {/* Top Android Header */}
-      <Header
-        trialStatus={trialStatus}
-        onOpenProfile={() => setShowProfile(true)}
-        onOpenCamera={() => setShowCamera(true)}
-        onOpenPaywall={() => setShowPaywall(true)}
-      />
-
-      {/* Main Screen Router */}
-      <main className="flex-1 p-4">
-        {activeTab === 'dashboard' && (
-          <NutrientDashboard
-            currentIntake={currentIntake}
-            driTargets={driTargets}
-            profile={profile}
-            onSearchFood={() => setShowSearch(true)}
-          />
-        )}
-
-        {activeTab === 'recommender' && (
-          <FoodRecommenderView
-            currentIntake={currentIntake}
-            driTargets={driTargets}
-            profileDiet={profile.dietaryPreference}
-            weightGoal={profile.weightGoal || 'maintain'}
-            onAddFoodToLog={handleAddFoodToLog}
-          />
-        )}
-
-        {activeTab === 'history' && (
-          <MealLogHistory
-            logs={mealLogs}
-            onDeleteLog={handleDeleteLog}
-          />
-        )}
-
-        {activeTab === 'profile' && (
-          <ProfileModal
-            onClose={() => setActiveTab('dashboard')}
-            profile={profile}
-            onUpdateProfile={handleUpdateProfile}
-            trialStatus={trialStatus}
-            onOpenPaywall={() => setShowPaywall(true)}
-          />
-        )}
-      </main>
-
-      {/* Bottom Android Navigation */}
-      <BottomNav
+      {/* Desktop / Laptop Sidebar Navigation (Hidden on Mobile, Visible on md/lg screens) */}
+      <DesktopSidebar
         activeTab={activeTab}
         onTabChange={(tab) => {
           if (tab === 'profile') {
@@ -190,7 +145,84 @@ export default function App() {
           }
         }}
         onOpenCamera={() => setShowCamera(true)}
+        trialStatus={trialStatus}
+        onOpenPaywall={() => setShowPaywall(true)}
       />
+
+      {/* Main Content Area (Cross-Platform Responsive Wrapper) */}
+      <div className="flex-1 flex flex-col min-h-screen max-w-4xl mx-auto w-full border-x border-slate-900 shadow-2xl">
+        
+        {/* Top Header */}
+        <Header
+          trialStatus={trialStatus}
+          onOpenProfile={() => setShowProfile(true)}
+          onOpenCamera={() => setShowCamera(true)}
+          onOpenPaywall={() => setShowPaywall(true)}
+        />
+
+        {/* Main Screen Router */}
+        <main className="flex-1 p-4 md:p-6">
+          {activeTab === 'dashboard' && (
+            <NutrientDashboard
+              currentIntake={currentIntake}
+              driTargets={driTargets}
+              profile={profile}
+              onSearchFood={() => setShowSearch(true)}
+            />
+          )}
+
+          {activeTab === 'recommender' && (
+            <FoodRecommenderView
+              currentIntake={currentIntake}
+              driTargets={driTargets}
+              profileDiet={profile.dietaryPreference}
+              weightGoal={profile.weightGoal || 'maintain'}
+              onAddFoodToLog={handleAddFoodToLog}
+            />
+          )}
+
+          {activeTab === 'planner' && (
+            <MealPlannerView
+              profile={profile}
+              driTargets={driTargets}
+              onAddFoodToLog={handleAddFoodToLog}
+            />
+          )}
+
+          {activeTab === 'history' && (
+            <MealLogHistory
+              logs={mealLogs}
+              onDeleteLog={handleDeleteLog}
+            />
+          )}
+
+          {activeTab === 'profile' && (
+            <ProfileModal
+              onClose={() => setActiveTab('dashboard')}
+              profile={profile}
+              onUpdateProfile={handleUpdateProfile}
+              trialStatus={trialStatus}
+              onOpenPaywall={() => setShowPaywall(true)}
+            />
+          )}
+        </main>
+
+        {/* Mobile Navigation (Hidden on Desktop md+ screens) */}
+        <div className="md:hidden">
+          <BottomNav
+            activeTab={activeTab}
+            onTabChange={(tab) => {
+              if (tab === 'profile') {
+                setShowProfile(true);
+              } else {
+                setActiveTab(tab);
+              }
+            }}
+            onOpenCamera={() => setShowCamera(true)}
+          />
+        </div>
+
+      </div>
 
       {/* MODALS */}
       {showCamera && (

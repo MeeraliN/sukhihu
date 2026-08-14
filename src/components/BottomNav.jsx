@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Sparkles, Camera, Utensils, User } from 'lucide-react';
+import { LayoutDashboard, Sparkles, Camera, Calendar, User } from 'lucide-react';
 
 export default function BottomNav({ activeTab, onTabChange, onOpenCamera }) {
   return (
@@ -40,16 +40,16 @@ export default function BottomNav({ activeTab, onTabChange, onOpenCamera }) {
           <Camera className="w-6 h-6 stroke-[2.5]" />
         </button>
 
-        {/* Meal Logs */}
+        {/* 14-Day Meal Planner */}
         <button
           type="button"
-          onClick={() => onTabChange('history')}
+          onClick={() => onTabChange('planner')}
           className={`flex flex-col items-center gap-1 p-1.5 transition ${
-            activeTab === 'history' ? 'text-emerald-400 font-bold' : 'text-slate-500 hover:text-slate-300'
+            activeTab === 'planner' ? 'text-emerald-400 font-bold' : 'text-slate-500 hover:text-slate-300'
           }`}
         >
-          <Utensils className="w-5 h-5" />
-          <span className="text-[10px]">Meal Logs</span>
+          <Calendar className="w-5 h-5" />
+          <span className="text-[10px]">14-Day Plan</span>
         </button>
 
         {/* Profile */}
