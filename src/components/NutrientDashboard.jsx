@@ -13,14 +13,13 @@ export default function NutrientDashboard({ currentIntake, driTargets, profile, 
   const remainingCalories = formatNutrientVal(Math.max(0, targetCalories - loggedCalories));
   const caloriePct = Math.min(100, Math.round((loggedCalories / targetCalories) * 100));
 
-  // WATER INTAKE PACE CALCULATION RELATIVE TO CURRENT TIME OF DAY
+  // HOURLY TIME-AWARE WATER INTAKE PACE & COLOR TRACING FOR OUTSIDE CARD
   const waterTargetMl = driTargets.water?.target || 3500;
   const loggedWaterMl = currentIntake.water || 0;
 
   const now = new Date();
   const currentHour = now.getHours() + now.getMinutes() / 60;
   
-  // Extract user wake/bed hours
   const wakeHour = Number(profile.routine?.wakeTime?.split(':')[0] || 7);
   const bedHour = Number(profile.routine?.bedTime?.split(':')[0] || 22);
 
@@ -31,11 +30,37 @@ export default function NutrientDashboard({ currentIntake, driTargets, profile, 
   const expectedWaterByNowMl = Math.round(waterTargetMl * dayPaceRatio);
   const isHydrationOnTrackByNow = loggedWaterMl >= (expectedWaterByNowMl * 0.8);
 
-  const waterPaceBadge = loggedWaterMl >= waterTargetMl
-    ? { text: '🟢 Daily Hydration Target Complete!', bg: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' }
+  // OUTSIDE WATER CARD DYNAMIC COLOR THEME
+  // Under-target = Yellow, On-track = Green/Cyan, Exceeded = Rose-Red
+  const outerWaterCardTheme = loggedWaterMl >= (waterTargetMl * 1.5)
+    ? {
+        bg: 'from-rose-950/40 via-slate-900 to-slate-900 border-rose-500/50',
+        text: 'text-rose-400',
+        iconBg: 'bg-rose-500/20 text-rose-400 border-rose-500/40',
+        badgeBg: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
+        btnBg: 'bg-rose-500 hover:bg-rose-400 text-slate-950',
+        bar: 'from-rose-500 to-red-600',
+        badgeText: '🔴 Exceeded Daily Limit'
+      }
     : isHydrationOnTrackByNow
-    ? { text: `🟢 Hydration Pace: Perfect On Track for ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`, bg: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' }
-    : { text: `🟡 Hydration Pace: Catching Up (${expectedWaterByNowMl}ml expected by now)`, bg: 'bg-amber-500/20 text-amber-300 border-amber-500/40' };
+    ? {
+        bg: 'from-cyan-950/40 via-slate-900 to-slate-900 border-cyan-500/50',
+        text: 'text-cyan-300',
+        iconBg: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/40',
+        badgeBg: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40',
+        btnBg: 'bg-cyan-500 hover:bg-cyan-400 text-slate-950',
+        bar: 'from-cyan-500 to-emerald-400',
+        badgeText: `🟢 Hydration Pace: On Track for ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+      }
+    : {
+        bg: 'from-amber-950/40 via-slate-900 to-slate-900 border-amber-500/50',
+        text: 'text-amber-300',
+        iconBg: 'bg-amber-500/20 text-amber-400 border-amber-500/40',
+        badgeBg: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+        btnBg: 'bg-amber-500 hover:bg-amber-400 text-slate-950',
+        bar: 'from-amber-500 to-yellow-400',
+        badgeText: `🟡 Hydration Pace: Catching Up (${expectedWaterByNowMl}ml expected by now)`
+      };
 
   // Filter keys by category
   const nutrientKeys = Object.keys(driTargets).filter(key => {
@@ -108,38 +133,38 @@ export default function NutrientDashboard({ currentIntake, driTargets, profile, 
         </div>
       </div>
 
-      {/* PROMINENT OUTSIDE WATER INTAKE CARD WITH HOURLY TIME-AWARE PACE */}
-      <div className="glass-card p-4 rounded-2xl border border-cyan-500/40 bg-gradient-to-br from-cyan-950/30 via-slate-900 to-slate-900 space-y-3">
+      {/* DYNAMIC COLOR-TRACEABLE OUTSIDE WATER CARD */}
+      <div className={`glass-card p-4 rounded-2xl border bg-gradient-to-br ${outerWaterCardTheme.bg} space-y-3 transition-all duration-500`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400">
+            <div className={`w-8 h-8 rounded-xl border flex items-center justify-center ${outerWaterCardTheme.iconBg}`}>
               <Droplets className="w-4 h-4" />
             </div>
             <div>
               <h3 className="font-extrabold text-slate-100 text-sm">Hydration & Water Intake</h3>
-              <p className="text-[10px] text-cyan-400 font-semibold">{loggedWaterMl} / {waterTargetMl} ml Logged</p>
+              <p className={`text-[10px] font-semibold ${outerWaterCardTheme.text}`}>{loggedWaterMl} / {waterTargetMl} ml Logged</p>
             </div>
           </div>
 
           <button
             type="button"
             onClick={onOpenWaterModal}
-            className="px-3 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs flex items-center gap-1 transition shadow-md shadow-cyan-500/20"
+            className={`px-3 py-1.5 rounded-xl font-black text-xs flex items-center gap-1 transition shadow-md ${outerWaterCardTheme.btnBg}`}
           >
             <Plus className="w-3.5 h-3.5 stroke-[3]" /> Log Water
           </button>
         </div>
 
-        {/* Hourly Time-Aware Pace Badge */}
-        <div className={`p-2.5 rounded-xl border text-xs font-extrabold flex items-center justify-between ${waterPaceBadge.bg}`}>
-          <span>{waterPaceBadge.text}</span>
+        {/* Dynamic Color Badge */}
+        <div className={`p-2.5 rounded-xl border text-xs font-extrabold flex items-center justify-between ${outerWaterCardTheme.badgeBg}`}>
+          <span>{outerWaterCardTheme.badgeText}</span>
           <span className="text-[10px] opacity-80">Time-Aware Pace</span>
         </div>
 
-        {/* Progress Bar */}
+        {/* Color Traceable Water Progress Bar */}
         <div className="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden border border-slate-800">
           <div
-            className="h-full bg-gradient-to-r from-cyan-500 to-teal-400 transition-all duration-300"
+            className={`h-full bg-gradient-to-r ${outerWaterCardTheme.bar} transition-all duration-500`}
             style={{ width: `${Math.min(100, Math.round((loggedWaterMl / waterTargetMl) * 100))}%` }}
           />
         </div>
