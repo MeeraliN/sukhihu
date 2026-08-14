@@ -203,6 +203,7 @@ export default function App() {
           onOpenWaterModal={() => setShowWaterModal(true)}
           loggedWaterMl={totalWaterLoggedMl}
           waterTargetMl={waterTargetMl}
+          profile={profile}
         />
 
         {/* Main Screen Router */}

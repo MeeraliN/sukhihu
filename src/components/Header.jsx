@@ -8,8 +8,30 @@ export default function Header({
   onOpenPaywall,
   onOpenWaterModal,
   loggedWaterMl = 0,
-  waterTargetMl = 3500
+  waterTargetMl = 3500,
+  profile
 }) {
+  // HOURLY TIME-AWARE WATER INTAKE PACE & COLOR TRACING FOR TOPMOST HEADER BUTTON
+  const now = new Date();
+  const currentHour = now.getHours() + now.getMinutes() / 60;
+  
+  const wakeHour = Number(profile?.routine?.wakeTime?.split(':')[0] || 7);
+  const bedHour = Number(profile?.routine?.bedTime?.split(':')[0] || 22);
+
+  const activeHoursPassed = Math.max(0.1, Math.min(15, currentHour - wakeHour));
+  const totalActiveHours = Math.max(8, bedHour - wakeHour);
+  const dayPaceRatio = Math.max(0.1, Math.min(1.0, activeHoursPassed / totalActiveHours));
+
+  const expectedWaterByNowMl = Math.round(waterTargetMl * dayPaceRatio);
+  const isHydrationOnTrackByNow = loggedWaterMl >= (expectedWaterByNowMl * 0.8);
+
+  // TOPMOST WATER BUTTON DYNAMIC COLOR THEME
+  const topWaterBtnTheme = loggedWaterMl >= (waterTargetMl * 1.5)
+    ? 'bg-rose-950/80 border-rose-500/60 text-rose-300'
+    : isHydrationOnTrackByNow
+    ? 'bg-cyan-950/80 border-cyan-500/60 text-cyan-300'
+    : 'bg-amber-950/80 border-amber-500/60 text-amber-300';
+
   return (
     <header className="sticky top-0 z-30 bg-slate-950/90 backdrop-blur-xl border-b border-slate-800/80 px-4 py-3 flex items-center justify-between">
       
@@ -31,14 +53,14 @@ export default function Header({
       {/* Top Action Items */}
       <div className="flex items-center gap-2">
         
-        {/* Hydration / Water Quick Access Button */}
+        {/* DYNAMIC COLOR-TRACEABLE TOPMOST WATER BUTTON */}
         <button
           type="button"
           onClick={onOpenWaterModal}
-          className="px-2.5 py-1 rounded-xl bg-cyan-950/60 border border-cyan-500/40 text-cyan-300 text-xs font-extrabold flex items-center gap-1.5 hover:border-cyan-400 transition"
+          className={`px-2.5 py-1 rounded-xl border text-xs font-extrabold flex items-center gap-1.5 transition ${topWaterBtnTheme}`}
           title="Open Water Tracker & Timings"
         >
-          <Droplets className="w-3.5 h-3.5 text-cyan-400" />
+          <Droplets className="w-3.5 h-3.5" />
           <span>{loggedWaterMl}/{waterTargetMl}ml</span>
         </button>
 
