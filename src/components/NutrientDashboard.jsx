@@ -13,7 +13,7 @@ export default function NutrientDashboard({ currentIntake, driTargets, profile, 
   const remainingCalories = formatNutrientVal(Math.max(0, targetCalories - loggedCalories));
   const caloriePct = Math.min(100, Math.round((loggedCalories / targetCalories) * 100));
 
-  // HOURLY TIME-AWARE WATER INTAKE PACE & COLOR TRACING FOR OUTSIDE CARD
+  // HOURLY TIME-AWARE WATER INTAKE PACE & COLOR TRACING
   const waterTargetMl = driTargets.water?.target || 3500;
   const loggedWaterMl = currentIntake.water || 0;
 
@@ -30,7 +30,7 @@ export default function NutrientDashboard({ currentIntake, driTargets, profile, 
   const expectedWaterByNowMl = Math.round(waterTargetMl * dayPaceRatio);
   const isHydrationOnTrackByNow = loggedWaterMl >= (expectedWaterByNowMl * 0.8);
 
-  // OUTSIDE WATER CARD DYNAMIC COLOR THEME
+  // WATER CARD DYNAMIC COLOR THEME
   const outerWaterCardTheme = loggedWaterMl >= (waterTargetMl * 1.5)
     ? {
         bg: 'from-rose-950/40 via-slate-900 to-slate-900 border-rose-500/50',
@@ -70,69 +70,12 @@ export default function NutrientDashboard({ currentIntake, driTargets, profile, 
     return true;
   });
 
-  // Calculate Overall Completion Score across all nutrients
-  let totalScoreRatioSum = 0;
-  const allKeys = Object.keys(driTargets);
-  allKeys.forEach(k => {
-    const t = driTargets[k].target;
-    const c = currentIntake[k] || 0;
-    const r = Math.min(100, (c / t) * 100);
-    totalScoreRatioSum += r;
-  });
-  const overallScore = Math.round(totalScoreRatioSum / allKeys.length);
-
-  // COLOR-TRACEABLE HEADER CARD STATUS
-  const headerTheme = overallScore < 50
-    ? { color: 'yellow', text: 'text-amber-400', border: 'border-amber-500/50', bg: 'from-amber-950/60 via-slate-900 to-slate-900', ring: 'text-amber-400' }
-    : overallScore < 85
-    ? { color: 'yellow', text: 'text-amber-400', border: 'border-amber-500/50', bg: 'from-amber-950/60 via-slate-900 to-slate-900', ring: 'text-amber-400' }
-    : { color: 'green', text: 'text-emerald-400', border: 'border-emerald-500/50', bg: 'from-emerald-950/60 via-slate-900 to-slate-900', ring: 'text-emerald-400' };
-
   const mitigationNote = driTargets.issueMitigationNote;
 
   return (
     <div className="space-y-4 pb-20">
-      
-      {/* COLOR-TRACEABLE OVERVIEW DAILY SCORE CARD */}
-      <div className={`glass-card p-4 rounded-2xl border ${headerTheme.border} bg-gradient-to-br ${headerTheme.bg} relative overflow-hidden transition-all duration-500`}>
-        <div className="flex items-center justify-between">
-          <div>
-            <div className={`flex items-center gap-1.5 text-xs font-bold mb-1 ${headerTheme.text}`}>
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>COLOR-TRACEABLE NUTRIENT COVERAGE</span>
-            </div>
-            <h2 className="text-2xl font-black text-slate-100">{overallScore}% Achieved</h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Personalized for {profile.heightCm}cm, {profile.weightKg}kg • {profile.dietaryPreference.toUpperCase()}
-            </p>
-          </div>
 
-          {/* Progress Circular Dial */}
-          <div className="relative w-16 h-16 flex items-center justify-center shrink-0">
-            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-              <path
-                className="text-slate-800"
-                strokeWidth="3.5"
-                stroke="currentColor"
-                fill="none"
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-              />
-              <path
-                className={`${headerTheme.ring} transition-all duration-500`}
-                strokeDasharray={`${overallScore}, 100`}
-                strokeWidth="3.5"
-                strokeLinecap="round"
-                stroke="currentColor"
-                fill="none"
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-              />
-            </svg>
-            <span className="absolute text-xs font-black text-slate-100">{overallScore}%</span>
-          </div>
-        </div>
-      </div>
-
-      {/* FULLY CLICKABLE DYNAMIC COLOR-TRACEABLE OUTSIDE WATER CARD */}
+      {/* 1. TOPMOST: FULLY CLICKABLE DYNAMIC COLOR-TRACEABLE WATER INTAKE CARD */}
       <div
         onClick={onOpenWaterModal}
         className={`glass-card p-4 rounded-2xl border bg-gradient-to-br ${outerWaterCardTheme.bg} space-y-3 cursor-pointer hover:border-cyan-400/80 transition-all duration-300 active:scale-[0.99]`}
@@ -160,7 +103,7 @@ export default function NutrientDashboard({ currentIntake, driTargets, profile, 
           </button>
         </div>
 
-        {/* Dynamic Color Badge */}
+        {/* Dynamic Color Pace Badge */}
         <div className={`p-2.5 rounded-xl border text-xs font-extrabold flex items-center justify-between ${outerWaterCardTheme.badgeBg}`}>
           <span>{outerWaterCardTheme.badgeText}</span>
           <span className="text-[10px] opacity-80">Tap to Open Tracker</span>
@@ -175,28 +118,7 @@ export default function NutrientDashboard({ currentIntake, driTargets, profile, 
         </div>
       </div>
 
-      {/* ISSUE TARGET ADJUSTMENT & SIDE EFFECT MITIGATION BANNER */}
-      {mitigationNote && (
-        <div className="p-4 rounded-2xl bg-gradient-to-r from-teal-950/70 via-slate-900 to-slate-900 border border-teal-500/40 space-y-2">
-          <div className="flex items-center gap-2 text-teal-300 text-xs font-extrabold">
-            <ShieldCheck className="w-4 h-4 text-teal-400" />
-            <span>Health Focus & Side-Effect Mitigation Solution</span>
-          </div>
-          <p className="text-xs text-slate-300 font-semibold">
-            {mitigationNote.issueName}: <span className="text-amber-400">{mitigationNote.adjustedNutrient}</span>
-          </p>
-          <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 text-[11px] text-slate-300 space-y-1">
-            <div className="text-rose-400 font-bold flex items-center gap-1">
-              <AlertTriangle className="w-3.5 h-3.5" /> Risk / Side Effect: {mitigationNote.sideEffect}
-            </div>
-            <div className="text-teal-300 font-medium">
-              {mitigationNote.mitigationSolution}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* AUTOMATIC CALORIE CALCULATOR CARD */}
+      {/* 2. SECOND: AUTOMATIC CALORIE CALCULATOR CARD */}
       <div className="glass-card p-4 rounded-2xl border border-amber-500/30 bg-gradient-to-br from-slate-900 via-amber-950/20 to-slate-900 space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -243,7 +165,28 @@ export default function NutrientDashboard({ currentIntake, driTargets, profile, 
         </div>
       </div>
 
-      {/* Category Navigation Tabs */}
+      {/* 3. THIRD: ISSUE TARGET ADJUSTMENT & SIDE EFFECT MITIGATION BANNER */}
+      {mitigationNote && (
+        <div className="p-4 rounded-2xl bg-gradient-to-r from-teal-950/70 via-slate-900 to-slate-900 border border-teal-500/40 space-y-2">
+          <div className="flex items-center gap-2 text-teal-300 text-xs font-extrabold">
+            <ShieldCheck className="w-4 h-4 text-teal-400" />
+            <span>Health Focus & Side-Effect Mitigation Solution</span>
+          </div>
+          <p className="text-xs text-slate-300 font-semibold">
+            {mitigationNote.issueName}: <span className="text-amber-400">{mitigationNote.adjustedNutrient}</span>
+          </p>
+          <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 text-[11px] text-slate-300 space-y-1">
+            <div className="text-rose-400 font-bold flex items-center gap-1">
+              <AlertTriangle className="w-3.5 h-3.5" /> Risk / Side Effect: {mitigationNote.sideEffect}
+            </div>
+            <div className="text-teal-300 font-medium">
+              {mitigationNote.mitigationSolution}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. FOURTH: CATEGORY NAVIGATION TABS */}
       <div className="flex bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs font-semibold">
         <button
           type="button"
@@ -274,7 +217,7 @@ export default function NutrientDashboard({ currentIntake, driTargets, profile, 
         </button>
       </div>
 
-      {/* Nutrient Cards Grid */}
+      {/* 5. FIFTH: VITAMINS, MINERALS & MACRONUTRIENT CARDS GRID */}
       <div className="space-y-2.5">
         {nutrientKeys.map(key => {
           const targetObj = driTargets[key];
