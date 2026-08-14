@@ -1,5 +1,5 @@
 import React from 'react';
-import { Camera, User, Crown, Clock, Droplets, Sparkles } from 'lucide-react';
+import { Camera, User, Crown, Clock, Droplets, Sparkles, Flame, Download } from 'lucide-react';
 
 export default function Header({
   trialStatus,
@@ -7,8 +7,11 @@ export default function Header({
   onOpenCamera,
   onOpenPaywall,
   onOpenWaterModal,
+  onOpenDownloadModal,
   loggedWaterMl = 0,
   waterTargetMl = 3500,
+  loggedCalories = 0,
+  targetCalories = 2000,
   profile
 }) {
   // HOURLY TIME-AWARE WATER INTAKE PACE & COLOR TRACING FOR TOPMOST HEADER BUTTON
@@ -32,15 +35,17 @@ export default function Header({
     ? 'bg-cyan-950/80 border-cyan-500/60 text-cyan-300'
     : 'bg-amber-950/80 border-amber-500/60 text-amber-300';
 
+  const isOverCalorie = loggedCalories > targetCalories;
+
   return (
-    <header className="sticky top-0 z-30 bg-slate-950/90 backdrop-blur-xl border-b border-slate-800/80 px-4 py-3 flex items-center justify-between">
+    <header className="sticky top-0 z-30 bg-slate-950/90 backdrop-blur-xl border-b border-slate-800/80 px-3 md:px-4 py-2.5 flex items-center justify-between gap-2 overflow-x-auto scrollbar-none">
       
       {/* Brand Title */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 shrink-0">
         <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/30">
           <Sparkles className="w-4 h-4 text-slate-950 font-bold" />
         </div>
-        <div>
+        <div className="hidden sm:block">
           <h1 className="font-black text-lg tracking-tight bg-gradient-to-r from-emerald-400 via-teal-200 to-emerald-100 bg-clip-text text-transparent leading-none">
             sukhihu
           </h1>
@@ -50,25 +55,49 @@ export default function Header({
         </div>
       </div>
 
-      {/* Top Action Items */}
-      <div className="flex items-center gap-2">
+      {/* Top Action Items & Badges */}
+      <div className="flex items-center gap-1.5 shrink-0">
         
         {/* DYNAMIC COLOR-TRACEABLE TOPMOST WATER BUTTON */}
         <button
           type="button"
           onClick={onOpenWaterModal}
-          className={`px-2.5 py-1 rounded-xl border text-xs font-extrabold flex items-center gap-1.5 transition ${topWaterBtnTheme}`}
+          className={`px-2 py-1 rounded-xl border text-[11px] font-extrabold flex items-center gap-1 transition ${topWaterBtnTheme}`}
           title="Open Water Tracker & Timings"
         >
           <Droplets className="w-3.5 h-3.5" />
           <span>{loggedWaterMl}/{waterTargetMl}ml</span>
         </button>
 
+        {/* COMPACT TOPMOST CALORIE COUNTER BADGE */}
+        <div
+          className={`px-2 py-1 rounded-xl border text-[11px] font-extrabold flex items-center gap-1 transition ${
+            isOverCalorie
+              ? 'bg-rose-950/80 border-rose-500/60 text-rose-300'
+              : 'bg-amber-950/80 border-amber-500/60 text-amber-300'
+          }`}
+          title="Real-Time Calories Logged Today"
+        >
+          <Flame className="w-3.5 h-3.5 text-amber-400" />
+          <span>{loggedCalories}/{targetCalories} kcal</span>
+        </div>
+
+        {/* SMART APP DOWNLOAD BUTTON */}
+        <button
+          type="button"
+          onClick={onOpenDownloadModal}
+          className="px-2 py-1 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-[11px] font-black flex items-center gap-1 transition shadow-md shadow-emerald-500/20"
+          title="Download App for your Device"
+        >
+          <Download className="w-3.5 h-3.5 stroke-[3]" />
+          <span className="hidden sm:inline">App</span>
+        </button>
+
         {/* PRO / Trial Badge */}
         <button
           type="button"
           onClick={onOpenPaywall}
-          className="px-2.5 py-1 rounded-xl bg-gradient-to-r from-amber-500/20 to-amber-600/20 border border-amber-500/40 text-amber-300 text-[11px] font-black flex items-center gap-1 hover:border-amber-400 transition"
+          className="px-2 py-1 rounded-xl bg-gradient-to-r from-amber-500/20 to-amber-600/20 border border-amber-500/40 text-amber-300 text-[11px] font-black flex items-center gap-1 hover:border-amber-400 transition"
         >
           {trialStatus?.isSubscribed ? (
             <>
@@ -87,20 +116,20 @@ export default function Header({
         <button
           type="button"
           onClick={onOpenCamera}
-          className="w-8 h-8 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 flex items-center justify-center hover:border-emerald-500/50 hover:text-emerald-400 transition"
+          className="w-7 h-7 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 flex items-center justify-center hover:border-emerald-500/50 hover:text-emerald-400 transition"
           title="Scan Food Photo"
         >
-          <Camera className="w-4 h-4" />
+          <Camera className="w-3.5 h-3.5" />
         </button>
 
         {/* Profile Avatar */}
         <button
           type="button"
           onClick={onOpenProfile}
-          className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-slate-950 flex items-center justify-center font-bold text-xs shadow-md shadow-emerald-500/20 hover:opacity-90 transition"
+          className="w-7 h-7 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-slate-950 flex items-center justify-center font-bold text-xs shadow-md shadow-emerald-500/20 hover:opacity-90 transition"
           title="Edit Profile"
         >
-          <User className="w-4 h-4 stroke-[2.5]" />
+          <User className="w-3.5 h-3.5 stroke-[2.5]" />
         </button>
 
       </div>

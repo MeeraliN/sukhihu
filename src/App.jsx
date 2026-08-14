@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { calculateDRI } from './services/driCalculator';
+import { calculateDRI, formatNutrientVal } from './services/driCalculator';
 import { getTrialStatus, getActiveCurrency } from './services/subscriptionService';
 
 import OnboardingWizard from './components/OnboardingWizard';
@@ -13,6 +13,7 @@ import ProfileModal from './components/ProfileModal';
 import PaywallModal from './components/PaywallModal';
 import PaymentCheckoutModal from './components/PaymentCheckoutModal';
 import WaterTrackerModal from './components/WaterTrackerModal';
+import DownloadAppModal from './components/DownloadAppModal';
 import MealLogHistory from './components/MealLogHistory';
 import BottomNav from './components/BottomNav';
 import DesktopSidebar from './components/DesktopSidebar';
@@ -36,6 +37,7 @@ export default function App() {
   const [showPaywall, setShowPaywall] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
   const [showWaterModal, setShowWaterModal] = useState(false);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [checkoutCurrency, setCheckoutCurrency] = useState(getActiveCurrency());
 
   // 1. Load saved profile, meal logs, and detailed water log entries on mount
@@ -149,7 +151,7 @@ export default function App() {
   const totalWaterLoggedMl = waterLogs.reduce((sum, w) => sum + w.amountMl, 0);
 
   // Aggregate daily nutrients from all logged meals
-  const currentIntake = { water: totalWaterLoggedMl };
+  const currentIntake = { water: totalWaterLoggedMl, calories: 0 };
   if (driTargets) {
     Object.keys(driTargets).forEach(key => {
       if (key !== 'water') currentIntake[key] = 0;
@@ -172,6 +174,8 @@ export default function App() {
   }
 
   const waterTargetMl = driTargets?.water?.target || 3500;
+  const targetCalories = driTargets?.calories?.target || 2000;
+  const loggedCalories = formatNutrientVal(currentIntake.calories || 0);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col md:flex-row relative">
@@ -201,8 +205,11 @@ export default function App() {
           onOpenCamera={() => setShowCamera(true)}
           onOpenPaywall={() => setShowPaywall(true)}
           onOpenWaterModal={() => setShowWaterModal(true)}
+          onOpenDownloadModal={() => setShowDownloadModal(true)}
           loggedWaterMl={totalWaterLoggedMl}
           waterTargetMl={waterTargetMl}
+          loggedCalories={loggedCalories}
+          targetCalories={targetCalories}
           profile={profile}
         />
 
@@ -272,6 +279,10 @@ export default function App() {
       </div>
 
       {/* MODALS */}
+      {showDownloadModal && (
+        <DownloadAppModal onClose={() => setShowDownloadModal(false)} />
+      )}
+
       {showWaterModal && (
         <WaterTrackerModal
           onClose={() => setShowWaterModal(false)}

@@ -8,12 +8,7 @@ export default function NutrientDashboard({ currentIntake, driTargets, profile, 
 
   if (!driTargets) return null;
 
-  const targetCalories = driTargets.calories?.target || 2000;
-  const loggedCalories = formatNutrientVal(currentIntake.calories || 0);
-  const remainingCalories = formatNutrientVal(Math.max(0, targetCalories - loggedCalories));
-  const caloriePct = Math.min(100, Math.round((loggedCalories / targetCalories) * 100));
-
-  // HOURLY TIME-AWARE WATER INTAKE PACE & COLOR TRACING
+  // HOURLY TIME-AWARE WATER INTAKE PACE & COLOR TRACING FOR OUTSIDE CARD
   const waterTargetMl = driTargets.water?.target || 3500;
   const loggedWaterMl = currentIntake.water || 0;
 
@@ -30,7 +25,7 @@ export default function NutrientDashboard({ currentIntake, driTargets, profile, 
   const expectedWaterByNowMl = Math.round(waterTargetMl * dayPaceRatio);
   const isHydrationOnTrackByNow = loggedWaterMl >= (expectedWaterByNowMl * 0.8);
 
-  // WATER CARD DYNAMIC COLOR THEME
+  // OUTSIDE WATER CARD DYNAMIC COLOR THEME
   const outerWaterCardTheme = loggedWaterMl >= (waterTargetMl * 1.5)
     ? {
         bg: 'from-rose-950/40 via-slate-900 to-slate-900 border-rose-500/50',
@@ -69,8 +64,6 @@ export default function NutrientDashboard({ currentIntake, driTargets, profile, 
     if (activeTab === 'macros') return cat === 'macro';
     return true;
   });
-
-  const mitigationNote = driTargets.issueMitigationNote;
 
   return (
     <div className="space-y-4 pb-20">
@@ -118,75 +111,7 @@ export default function NutrientDashboard({ currentIntake, driTargets, profile, 
         </div>
       </div>
 
-      {/* 2. SECOND: AUTOMATIC CALORIE CALCULATOR CARD */}
-      <div className="glass-card p-4 rounded-2xl border border-amber-500/30 bg-gradient-to-br from-slate-900 via-amber-950/20 to-slate-900 space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
-              <Flame className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="font-extrabold text-slate-100 text-sm">Automatic Calorie Calculator</h3>
-              <p className="text-[10px] text-amber-400 font-semibold">Real-Time Daily Energy Budget</p>
-            </div>
-          </div>
-          <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${
-            loggedCalories > targetCalories
-              ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
-              : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-          }`}>
-            {loggedCalories > targetCalories ? '🔴 Over Budget' : '🟢 Within Caloric Budget'}
-          </span>
-        </div>
-
-        {/* Calorie Progress Bar */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-slate-300 font-semibold">Logged: <strong className="text-amber-400">{loggedCalories} kcal</strong></span>
-            <span className="text-slate-300 font-semibold">Budget: <strong className="text-slate-100">{targetCalories} kcal</strong></span>
-          </div>
-
-          <div className="w-full bg-slate-950/80 h-3 rounded-full overflow-hidden border border-slate-800">
-            <div
-              className={`h-full transition-all duration-300 ${
-                loggedCalories > targetCalories
-                  ? 'bg-gradient-to-r from-amber-500 to-rose-500'
-                  : 'bg-gradient-to-r from-amber-500 to-emerald-400'
-              }`}
-              style={{ width: `${caloriePct}%` }}
-            />
-          </div>
-        </div>
-
-        {/* Remaining Caloric Room */}
-        <div className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80 flex items-center justify-between text-xs">
-          <span className="text-slate-400 font-medium">Remaining Caloric Room Today:</span>
-          <span className="font-extrabold text-emerald-400">{remainingCalories} kcal</span>
-        </div>
-      </div>
-
-      {/* 3. THIRD: ISSUE TARGET ADJUSTMENT & SIDE EFFECT MITIGATION BANNER */}
-      {mitigationNote && (
-        <div className="p-4 rounded-2xl bg-gradient-to-r from-teal-950/70 via-slate-900 to-slate-900 border border-teal-500/40 space-y-2">
-          <div className="flex items-center gap-2 text-teal-300 text-xs font-extrabold">
-            <ShieldCheck className="w-4 h-4 text-teal-400" />
-            <span>Health Focus & Side-Effect Mitigation Solution</span>
-          </div>
-          <p className="text-xs text-slate-300 font-semibold">
-            {mitigationNote.issueName}: <span className="text-amber-400">{mitigationNote.adjustedNutrient}</span>
-          </p>
-          <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 text-[11px] text-slate-300 space-y-1">
-            <div className="text-rose-400 font-bold flex items-center gap-1">
-              <AlertTriangle className="w-3.5 h-3.5" /> Risk / Side Effect: {mitigationNote.sideEffect}
-            </div>
-            <div className="text-teal-300 font-medium">
-              {mitigationNote.mitigationSolution}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 4. FOURTH: CATEGORY NAVIGATION TABS */}
+      {/* 2. SECOND: CATEGORY NAVIGATION TABS */}
       <div className="flex bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs font-semibold">
         <button
           type="button"
@@ -217,7 +142,7 @@ export default function NutrientDashboard({ currentIntake, driTargets, profile, 
         </button>
       </div>
 
-      {/* 5. FIFTH: VITAMINS, MINERALS & MACRONUTRIENT CARDS GRID */}
+      {/* 3. THIRD: VITAMINS, MINERALS & MACRONUTRIENT CARDS GRID DIRECTLY */}
       <div className="space-y-2.5">
         {nutrientKeys.map(key => {
           const targetObj = driTargets[key];
