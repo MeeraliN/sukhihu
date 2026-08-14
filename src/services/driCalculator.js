@@ -1,7 +1,7 @@
 /**
  * USDA / National Academy of Medicine (NAM) Dietary Reference Intakes (DRI) Calculator
  * Computes exact daily targets for 40+ macronutrients, vitamins, minerals,
- * and DYNAMIC MEDICAL HYDRATION REQUIREMENTS with Color Status Badges.
+ * and TIME-AWARE DYNAMIC MEDICAL HYDRATION REQUIREMENTS.
  */
 
 export function formatNutrientVal(val) {
@@ -14,13 +14,13 @@ export function calculateDRI(profile) {
     heightCm = 175,
     weightKg = 70,
     age = 28,
-    sex = 'male', // 'male' | 'female'
-    lifeStage = 'standard', // 'standard' | 'pregnant' | 'lactating'
-    activityLevel = 'moderate', // 'sedentary' | 'light' | 'moderate' | 'active' | 'extra'
-    weightGoal = 'maintain', // 'loss' | 'maintain' | 'gain'
-    healthIssue = 'acne_skin', // 'acne_skin' | 'hair_fall' | 'weight_loss' | 'energy_fatigue' | etc.
-    climate = 'standard', // 'standard' | 'hot'
-    medicalTreatment = 'none', // 'none' | 'renal_flush' | 'high_protein' | 'sweat_heavy'
+    sex = 'male',
+    lifeStage = 'standard',
+    activityLevel = 'moderate',
+    weightGoal = 'maintain',
+    healthIssue = 'acne_skin',
+    climate = 'standard',
+    medicalTreatment = 'none',
     routine = {
       wakeTime: '07:00',
       breakfastTime: '08:30',
@@ -115,7 +115,7 @@ export function calculateDRI(profile) {
     monoFat: { target: monoFat, unit: 'g', label: 'Monounsaturated Fat', cat: 'macro' },
     polyFat: { target: polyFat, unit: 'g', label: 'Polyunsaturated Fat', cat: 'macro' },
     sugar: { target: 25, unit: 'g', label: 'Added Sugar Max', cat: 'macro', upperLimit: 36 },
-    water: { target: waterMl, unit: 'ml', label: 'Water (Personalized)', cat: 'macro', upperLimit: waterMl * 1.6 },
+    water: { target: waterMl, unit: 'ml', label: 'Water Intake', cat: 'macro', upperLimit: waterMl * 1.6 },
     omega3: { target: isMale ? 1.6 : 1.1, unit: 'g', label: 'Omega-3 (ALA)', cat: 'macro' },
     omega6: { target: isMale ? 17 : 12, unit: 'g', label: 'Omega-6 (LA)', cat: 'macro' },
     cholesterol: { target: 200, unit: 'mg', label: 'Cholesterol Max', cat: 'macro', upperLimit: 300 },
@@ -199,6 +199,7 @@ export function calculateDRI(profile) {
 
 /**
  * Returns Color Status for a given nutrient intake percentage vs target
+ * Uses YELLOW for under-target instead of red, and RED only for toxic upper limits / excessive overflow.
  */
 export function getNutrientStatus(current, targetObj) {
   if (!targetObj) return { color: 'slate', code: 'UNKNOWN', label: 'Normal', bg: 'bg-slate-800', text: 'text-slate-300' };
@@ -213,18 +214,18 @@ export function getNutrientStatus(current, targetObj) {
       label: '⚠️ Exceeds Upper Limit',
       bg: 'bg-rose-950/80 border-rose-500/50',
       text: 'text-rose-400',
-      badge: '🔴 Too Much (Exceeded)'
+      badge: '🔴 Too Much (UL Exceeded)'
     };
   }
 
   if (ratio < 50) {
     return {
-      color: 'red',
-      code: 'TOO_LESS',
-      label: '🔴 Deficient (<50%)',
-      bg: 'bg-red-950/40 border-red-500/30',
-      text: 'text-red-400',
-      badge: '🔴 Too Less (<50%)'
+      color: 'yellow',
+      code: 'UNDER_TARGET',
+      label: '🟡 Under Target (<50%)',
+      bg: 'bg-amber-950/40 border-amber-500/30',
+      text: 'text-amber-400',
+      badge: '🟡 Under Target'
     };
   } else if (ratio >= 85 && ratio <= 125) {
     return {
@@ -233,7 +234,7 @@ export function getNutrientStatus(current, targetObj) {
       label: '🟢 Optimal (Perfect)',
       bg: 'bg-emerald-950/40 border-emerald-500/40',
       text: 'text-emerald-400',
-      badge: '🟢 Perfect (85-125%)'
+      badge: '🟢 Perfect'
     };
   } else if (ratio > 150) {
     return {
@@ -242,7 +243,7 @@ export function getNutrientStatus(current, targetObj) {
       label: '🔴 Too High (>150%)',
       bg: 'bg-rose-950/50 border-rose-500/40',
       text: 'text-rose-400',
-      badge: '🔴 Too Much (>150% Exceeded)'
+      badge: '🔴 Exceeded Limit'
     };
   } else {
     return {
@@ -251,7 +252,7 @@ export function getNutrientStatus(current, targetObj) {
       label: '🟡 Moderate (50-85%)',
       bg: 'bg-amber-950/40 border-amber-500/30',
       text: 'text-amber-400',
-      badge: '🟡 Moderate (50-85%)'
+      badge: '🟡 Moderate'
     };
   }
 }

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { getNutrientStatus, formatNutrientVal } from '../services/driCalculator';
-import { Sparkles, Info, ShieldAlert, CheckCircle2, Flame, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { Sparkles, Info, ShieldAlert, CheckCircle2, Flame, ShieldCheck, AlertTriangle, Droplets, Plus } from 'lucide-react';
 
-export default function NutrientDashboard({ currentIntake, driTargets, profile, onSearchFood }) {
+export default function NutrientDashboard({ currentIntake, driTargets, profile, onSearchFood, onOpenWaterModal }) {
   const [activeTab, setActiveTab] = useState('vitamins'); // 'vitamins' | 'minerals' | 'macros'
   const [selectedNutrient, setSelectedNutrient] = useState(null);
 
@@ -12,6 +12,30 @@ export default function NutrientDashboard({ currentIntake, driTargets, profile, 
   const loggedCalories = formatNutrientVal(currentIntake.calories || 0);
   const remainingCalories = formatNutrientVal(Math.max(0, targetCalories - loggedCalories));
   const caloriePct = Math.min(100, Math.round((loggedCalories / targetCalories) * 100));
+
+  // WATER INTAKE PACE CALCULATION RELATIVE TO CURRENT TIME OF DAY
+  const waterTargetMl = driTargets.water?.target || 3500;
+  const loggedWaterMl = currentIntake.water || 0;
+
+  const now = new Date();
+  const currentHour = now.getHours() + now.getMinutes() / 60;
+  
+  // Extract user wake/bed hours
+  const wakeHour = Number(profile.routine?.wakeTime?.split(':')[0] || 7);
+  const bedHour = Number(profile.routine?.bedTime?.split(':')[0] || 22);
+
+  const activeHoursPassed = Math.max(0.1, Math.min(15, currentHour - wakeHour));
+  const totalActiveHours = Math.max(8, bedHour - wakeHour);
+  const dayPaceRatio = Math.max(0.1, Math.min(1.0, activeHoursPassed / totalActiveHours));
+
+  const expectedWaterByNowMl = Math.round(waterTargetMl * dayPaceRatio);
+  const isHydrationOnTrackByNow = loggedWaterMl >= (expectedWaterByNowMl * 0.8);
+
+  const waterPaceBadge = loggedWaterMl >= waterTargetMl
+    ? { text: '🟢 Daily Hydration Target Complete!', bg: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' }
+    : isHydrationOnTrackByNow
+    ? { text: `🟢 Hydration Pace: Perfect On Track for ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`, bg: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' }
+    : { text: `🟡 Hydration Pace: Catching Up (${expectedWaterByNowMl}ml expected by now)`, bg: 'bg-amber-500/20 text-amber-300 border-amber-500/40' };
 
   // Filter keys by category
   const nutrientKeys = Object.keys(driTargets).filter(key => {
@@ -34,9 +58,8 @@ export default function NutrientDashboard({ currentIntake, driTargets, profile, 
   const overallScore = Math.round(totalScoreRatioSum / allKeys.length);
 
   // COLOR-TRACEABLE HEADER CARD STATUS
-  // < 50% = RED, 50-85% = YELLOW, >= 85% = GREEN
   const headerTheme = overallScore < 50
-    ? { color: 'red', text: 'text-red-400', border: 'border-red-500/50', bg: 'from-red-950/60 via-slate-900 to-slate-900', ring: 'text-red-500' }
+    ? { color: 'yellow', text: 'text-amber-400', border: 'border-amber-500/50', bg: 'from-amber-950/60 via-slate-900 to-slate-900', ring: 'text-amber-400' }
     : overallScore < 85
     ? { color: 'yellow', text: 'text-amber-400', border: 'border-amber-500/50', bg: 'from-amber-950/60 via-slate-900 to-slate-900', ring: 'text-amber-400' }
     : { color: 'green', text: 'text-emerald-400', border: 'border-emerald-500/50', bg: 'from-emerald-950/60 via-slate-900 to-slate-900', ring: 'text-emerald-400' };
@@ -82,6 +105,43 @@ export default function NutrientDashboard({ currentIntake, driTargets, profile, 
             </svg>
             <span className="absolute text-xs font-black text-slate-100">{overallScore}%</span>
           </div>
+        </div>
+      </div>
+
+      {/* PROMINENT OUTSIDE WATER INTAKE CARD WITH HOURLY TIME-AWARE PACE */}
+      <div className="glass-card p-4 rounded-2xl border border-cyan-500/40 bg-gradient-to-br from-cyan-950/30 via-slate-900 to-slate-900 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400">
+              <Droplets className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-slate-100 text-sm">Hydration & Water Intake</h3>
+              <p className="text-[10px] text-cyan-400 font-semibold">{loggedWaterMl} / {waterTargetMl} ml Logged</p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onOpenWaterModal}
+            className="px-3 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs flex items-center gap-1 transition shadow-md shadow-cyan-500/20"
+          >
+            <Plus className="w-3.5 h-3.5 stroke-[3]" /> Log Water
+          </button>
+        </div>
+
+        {/* Hourly Time-Aware Pace Badge */}
+        <div className={`p-2.5 rounded-xl border text-xs font-extrabold flex items-center justify-between ${waterPaceBadge.bg}`}>
+          <span>{waterPaceBadge.text}</span>
+          <span className="text-[10px] opacity-80">Time-Aware Pace</span>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden border border-slate-800">
+          <div
+            className="h-full bg-gradient-to-r from-cyan-500 to-teal-400 transition-all duration-300"
+            style={{ width: `${Math.min(100, Math.round((loggedWaterMl / waterTargetMl) * 100))}%` }}
+          />
         </div>
       </div>
 
@@ -212,7 +272,7 @@ export default function NutrientDashboard({ currentIntake, driTargets, profile, 
                 {/* Explicit Color Badge */}
                 <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
                   status.color === 'green' ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300' :
-                  status.color === 'red' ? 'bg-red-500/20 border-red-500/50 text-red-300' :
+                  status.color === 'red' ? 'bg-rose-500/20 border-rose-500/50 text-rose-300' :
                   'bg-amber-500/20 border-amber-500/50 text-amber-300'
                 }`}>
                   {status.badge}
@@ -224,7 +284,7 @@ export default function NutrientDashboard({ currentIntake, driTargets, profile, 
                 <div
                   className={`h-full transition-all duration-300 ${
                     status.color === 'green' ? 'bg-gradient-to-r from-emerald-500 to-teal-400' :
-                    status.color === 'red' ? 'bg-gradient-to-r from-red-500 to-rose-400' :
+                    status.color === 'red' ? 'bg-gradient-to-r from-rose-500 to-red-600' :
                     'bg-gradient-to-r from-amber-500 to-yellow-400'
                   }`}
                   style={{ width: `${pct}%` }}

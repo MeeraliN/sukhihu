@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { Droplets, Clock, Camera, Plus, CheckCircle2, ShieldCheck, Flame, Info, Sparkles, X, BellRing, AlertTriangle } from 'lucide-react';
+import { Droplets, Clock, Camera, Plus, CheckCircle2, ShieldCheck, Flame, Info, Sparkles, X, BellRing, Trash2 } from 'lucide-react';
 
 export default function WaterTrackerModal({
   onClose,
   waterTargetMl = 3500,
   loggedWaterMl = 0,
   onLogWater,
+  onDeleteWaterLog,
+  waterLogs = [],
   profile
 }) {
   const [customMl, setCustomMl] = useState(250);
@@ -16,15 +18,26 @@ export default function WaterTrackerModal({
   const remainingWaterMl = Math.max(0, waterTargetMl - loggedWaterMl);
   const waterPct = Math.min(200, Math.round((loggedWaterMl / waterTargetMl) * 100));
 
-  // WATER STATUS COLOR TRACING
-  // < 50% = RED (Too Less), 50-85% = YELLOW (Moderate), 85-125% = GREEN/CYAN (Perfect), > 125% = RED (Exceeded)
-  const waterStatus = waterPct < 50
-    ? { color: 'red', badge: '🔴 Too Less (<50%)', bg: 'bg-red-950/50 border-red-500/40', text: 'text-red-400', bar: 'from-red-500 to-rose-500' }
-    : waterPct <= 85
-    ? { color: 'yellow', badge: '🟡 Moderate (50-85%)', bg: 'bg-amber-950/50 border-amber-500/40', text: 'text-amber-300', bar: 'from-amber-500 to-yellow-400' }
-    : waterPct <= 125
-    ? { color: 'green', badge: '🟢 Perfect Hydration (85-125%)', bg: 'bg-cyan-950/60 border-cyan-500/50', text: 'text-cyan-300', bar: 'from-cyan-500 to-emerald-400' }
-    : { color: 'red', badge: '🔴 Exceeded / Too Much (>125%)', bg: 'bg-rose-950/60 border-rose-500/50', text: 'text-rose-400', bar: 'from-rose-500 to-red-600' };
+  // HOURLY TIME-AWARE PACING
+  const now = new Date();
+  const currentHour = now.getHours() + now.getMinutes() / 60;
+  
+  const wakeHour = Number(profile?.routine?.wakeTime?.split(':')[0] || 7);
+  const bedHour = Number(profile?.routine?.bedTime?.split(':')[0] || 22);
+
+  const activeHoursPassed = Math.max(0.1, Math.min(15, currentHour - wakeHour));
+  const totalActiveHours = Math.max(8, bedHour - wakeHour);
+  const dayPaceRatio = Math.max(0.1, Math.min(1.0, activeHoursPassed / totalActiveHours));
+
+  const expectedWaterByNowMl = Math.round(waterTargetMl * dayPaceRatio);
+  const isHydrationOnTrackByNow = loggedWaterMl >= (expectedWaterByNowMl * 0.8);
+
+  // WATER STATUS COLOR TRACING (YELLOW for under-target, GREEN for on-track, RED for overflow)
+  const waterStatus = loggedWaterMl >= (waterTargetMl * 1.5)
+    ? { color: 'red', badge: '🔴 Exceeded Limit (>150%)', bg: 'bg-rose-950/60 border-rose-500/50', text: 'text-rose-400', bar: 'from-rose-500 to-red-600' }
+    : isHydrationOnTrackByNow
+    ? { color: 'green', badge: '🟢 Perfect On Track', bg: 'bg-cyan-950/60 border-cyan-500/50', text: 'text-cyan-300', bar: 'from-cyan-500 to-emerald-400' }
+    : { color: 'yellow', badge: `🟡 Under Pace (${expectedWaterByNowMl}ml expected by now)`, bg: 'bg-amber-950/50 border-amber-500/40', text: 'text-amber-300', bar: 'from-amber-500 to-yellow-400' };
 
   // Extract user's personalized routine timings
   const wakeTime = profile?.routine?.wakeTime || '07:00';
@@ -191,7 +204,7 @@ export default function WaterTrackerModal({
         {activeTab === 'tracker' && (
           <div className="space-y-4">
             
-            {/* COLOR-TRACEABLE WATER TARGET CARD */}
+            {/* TIME-AWARE WATER TARGET CARD */}
             <div className={`p-4 rounded-2xl glass-card border ${waterStatus.bg} space-y-3 transition-all duration-300`}>
               <div className="flex items-center justify-between">
                 <div className="text-xs font-bold text-slate-300">
@@ -200,7 +213,7 @@ export default function WaterTrackerModal({
                 {/* Explicit Color Badge */}
                 <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border ${
                   waterStatus.color === 'green' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' :
-                  waterStatus.color === 'red' ? 'bg-red-500/20 text-red-300 border-red-500/40' :
+                  waterStatus.color === 'red' ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' :
                   'bg-amber-500/20 text-amber-300 border-amber-500/40'
                 }`}>
                   {waterStatus.badge}
@@ -218,7 +231,7 @@ export default function WaterTrackerModal({
               <div className="flex items-center justify-between text-[11px]">
                 <span className="text-slate-400">{waterPct}% Target Met</span>
                 <span className={`font-extrabold ${waterStatus.text}`}>
-                  {waterPct > 125 ? `⚠️ Exceeded by ${loggedWaterMl - waterTargetMl} ml` : `${remainingWaterMl} ml Remaining`}
+                  {waterPct > 150 ? `⚠️ Exceeded by ${loggedWaterMl - waterTargetMl} ml` : `${remainingWaterMl} ml Remaining`}
                 </span>
               </div>
             </div>
@@ -297,6 +310,38 @@ export default function WaterTrackerModal({
                 <Plus className="w-4 h-4 stroke-[3]" /> Log ml
               </button>
             </div>
+
+            {/* LOGGED WATER HISTORY LIST WITH DELETE BUTTON */}
+            {waterLogs.length > 0 && (
+              <div className="space-y-2 pt-2 border-t border-slate-800">
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
+                  Today's Logged Water Entries (Tap 🗑️ to Delete)
+                </label>
+
+                <div className="space-y-1.5 max-h-36 overflow-y-auto scrollbar-none">
+                  {waterLogs.map((log) => (
+                    <div key={log.id} className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">💧</span>
+                        <div>
+                          <span className="font-bold text-slate-100">+{log.amountMl} ml</span>
+                          <span className="text-[10px] text-slate-400 block">{log.timeStr}</span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => onDeleteWaterLog(log.id)}
+                        className="p-1.5 rounded-lg bg-rose-500/20 text-rose-300 hover:bg-rose-500 hover:text-slate-950 transition"
+                        title="Delete accidental log"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
           </div>
         )}

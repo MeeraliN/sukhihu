@@ -19,13 +19,13 @@ import DesktopSidebar from './components/DesktopSidebar';
 
 const STORAGE_KEY_PROFILE = 'sukhihu_user_profile';
 const STORAGE_KEY_LOGS = 'sukhihu_daily_meal_logs';
-const STORAGE_KEY_WATER = 'sukhihu_daily_water_ml';
+const STORAGE_KEY_WATER_LOGS = 'sukhihu_daily_water_entries';
 
 export default function App() {
   const [profile, setProfile] = useState(null);
   const [driTargets, setDriTargets] = useState(null);
   const [mealLogs, setMealLogs] = useState([]);
-  const [loggedWaterMl, setLoggedWaterMl] = useState(0);
+  const [waterLogs, setWaterLogs] = useState([]);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [trialStatus, setTrialStatus] = useState(getTrialStatus());
 
@@ -38,7 +38,7 @@ export default function App() {
   const [showWaterModal, setShowWaterModal] = useState(false);
   const [checkoutCurrency, setCheckoutCurrency] = useState(getActiveCurrency());
 
-  // 1. Load saved profile, meal logs, and water intake on mount
+  // 1. Load saved profile, meal logs, and detailed water log entries on mount
   useEffect(() => {
     const savedProfStr = localStorage.getItem(STORAGE_KEY_PROFILE);
     if (savedProfStr) {
@@ -60,9 +60,13 @@ export default function App() {
       }
     }
 
-    const savedWater = localStorage.getItem(STORAGE_KEY_WATER);
-    if (savedWater) {
-      setLoggedWaterMl(Number(savedWater) || 0);
+    const savedWaterEntries = localStorage.getItem(STORAGE_KEY_WATER_LOGS);
+    if (savedWaterEntries) {
+      try {
+        setWaterLogs(JSON.parse(savedWaterEntries));
+      } catch {
+        // Fallback
+      }
     }
 
     // Register Service Worker for PWA
@@ -117,15 +121,34 @@ export default function App() {
     localStorage.setItem(STORAGE_KEY_LOGS, JSON.stringify(updatedLogs));
   };
 
-  // Water Intake Logging
+  // Detailed Water Entry Logging & Deletion
   const handleLogWater = (addedMl) => {
-    const newTotal = loggedWaterMl + Number(addedMl);
-    setLoggedWaterMl(newTotal);
-    localStorage.setItem(STORAGE_KEY_WATER, newTotal.toString());
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    const newWaterEntry = {
+      id: Date.now().toString(),
+      amountMl: Number(addedMl),
+      timeStr,
+      timestamp: now.getTime()
+    };
+
+    const updatedWaterLogs = [newWaterEntry, ...waterLogs];
+    setWaterLogs(updatedWaterLogs);
+    localStorage.setItem(STORAGE_KEY_WATER_LOGS, JSON.stringify(updatedWaterLogs));
   };
 
+  const handleDeleteWaterLog = (id) => {
+    const updatedWaterLogs = waterLogs.filter(w => w.id !== id);
+    setWaterLogs(updatedWaterLogs);
+    localStorage.setItem(STORAGE_KEY_WATER_LOGS, JSON.stringify(updatedWaterLogs));
+  };
+
+  // Sum total water logged
+  const totalWaterLoggedMl = waterLogs.reduce((sum, w) => sum + w.amountMl, 0);
+
   // Aggregate daily nutrients from all logged meals
-  const currentIntake = { water: loggedWaterMl };
+  const currentIntake = { water: totalWaterLoggedMl };
   if (driTargets) {
     Object.keys(driTargets).forEach(key => {
       if (key !== 'water') currentIntake[key] = 0;
@@ -177,7 +200,7 @@ export default function App() {
           onOpenCamera={() => setShowCamera(true)}
           onOpenPaywall={() => setShowPaywall(true)}
           onOpenWaterModal={() => setShowWaterModal(true)}
-          loggedWaterMl={loggedWaterMl}
+          loggedWaterMl={totalWaterLoggedMl}
           waterTargetMl={waterTargetMl}
         />
 
@@ -189,6 +212,7 @@ export default function App() {
               driTargets={driTargets}
               profile={profile}
               onSearchFood={() => setShowSearch(true)}
+              onOpenWaterModal={() => setShowWaterModal(true)}
             />
           )}
 
@@ -250,8 +274,10 @@ export default function App() {
         <WaterTrackerModal
           onClose={() => setShowWaterModal(false)}
           waterTargetMl={waterTargetMl}
-          loggedWaterMl={loggedWaterMl}
+          loggedWaterMl={totalWaterLoggedMl}
           onLogWater={handleLogWater}
+          onDeleteWaterLog={handleDeleteWaterLog}
+          waterLogs={waterLogs}
           profile={profile}
         />
       )}
