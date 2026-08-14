@@ -31,7 +31,6 @@ export default function NutrientDashboard({ currentIntake, driTargets, profile, 
   const isHydrationOnTrackByNow = loggedWaterMl >= (expectedWaterByNowMl * 0.8);
 
   // OUTSIDE WATER CARD DYNAMIC COLOR THEME
-  // Under-target = Yellow, On-track = Green/Cyan, Exceeded = Rose-Red
   const outerWaterCardTheme = loggedWaterMl >= (waterTargetMl * 1.5)
     ? {
         bg: 'from-rose-950/40 via-slate-900 to-slate-900 border-rose-500/50',
@@ -133,8 +132,11 @@ export default function NutrientDashboard({ currentIntake, driTargets, profile, 
         </div>
       </div>
 
-      {/* DYNAMIC COLOR-TRACEABLE OUTSIDE WATER CARD */}
-      <div className={`glass-card p-4 rounded-2xl border bg-gradient-to-br ${outerWaterCardTheme.bg} space-y-3 transition-all duration-500`}>
+      {/* FULLY CLICKABLE DYNAMIC COLOR-TRACEABLE OUTSIDE WATER CARD */}
+      <div
+        onClick={onOpenWaterModal}
+        className={`glass-card p-4 rounded-2xl border bg-gradient-to-br ${outerWaterCardTheme.bg} space-y-3 cursor-pointer hover:border-cyan-400/80 transition-all duration-300 active:scale-[0.99]`}
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className={`w-8 h-8 rounded-xl border flex items-center justify-center ${outerWaterCardTheme.iconBg}`}>
@@ -148,7 +150,10 @@ export default function NutrientDashboard({ currentIntake, driTargets, profile, 
 
           <button
             type="button"
-            onClick={onOpenWaterModal}
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenWaterModal();
+            }}
             className={`px-3 py-1.5 rounded-xl font-black text-xs flex items-center gap-1 transition shadow-md ${outerWaterCardTheme.btnBg}`}
           >
             <Plus className="w-3.5 h-3.5 stroke-[3]" /> Log Water
@@ -158,7 +163,7 @@ export default function NutrientDashboard({ currentIntake, driTargets, profile, 
         {/* Dynamic Color Badge */}
         <div className={`p-2.5 rounded-xl border text-xs font-extrabold flex items-center justify-between ${outerWaterCardTheme.badgeBg}`}>
           <span>{outerWaterCardTheme.badgeText}</span>
-          <span className="text-[10px] opacity-80">Time-Aware Pace</span>
+          <span className="text-[10px] opacity-80">Tap to Open Tracker</span>
         </div>
 
         {/* Color Traceable Water Progress Bar */}
