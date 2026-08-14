@@ -1,7 +1,7 @@
 /**
  * USDA / National Academy of Medicine (NAM) Dietary Reference Intakes (DRI) Calculator
  * Computes exact daily targets for 40+ macronutrients, vitamins, minerals,
- * and DYNAMIC MEDICAL HYDRATION REQUIREMENTS.
+ * and DYNAMIC MEDICAL HYDRATION REQUIREMENTS with Color Status Badges.
  */
 
 export function formatNutrientVal(val) {
@@ -81,18 +81,14 @@ export function calculateDRI(profile) {
   const polyFat = formatNutrientVal((calories * 0.07) / 9);
 
   // 6. DYNAMIC PERSONALIZED WATER INTAKE CALCULATOR
-  // Base requirement: 35ml per kg of body weight
   let calculatedWaterMl = weightKg * 35;
 
-  // Adjust for Activity Level
   if (activityLevel === 'light') calculatedWaterMl += 350;
   else if (activityLevel === 'moderate') calculatedWaterMl += 700;
   else if (activityLevel === 'active' || activityLevel === 'extra') calculatedWaterMl += 1200;
 
-  // Adjust for Climate
   if (climate === 'hot') calculatedWaterMl += 500;
 
-  // Adjust for Health Issue / Medical Treatment
   if (healthIssue === 'acne_skin') calculatedWaterMl += 1000;
   else if (healthIssue === 'weight_loss') calculatedWaterMl += 600;
   else if (healthIssue === 'immunity') calculatedWaterMl += 800;
@@ -101,7 +97,6 @@ export function calculateDRI(profile) {
   if (medicalTreatment === 'high_protein') calculatedWaterMl += 800;
   if (medicalTreatment === 'sweat_heavy') calculatedWaterMl += 1000;
 
-  // Adjust for Life Stage
   if (lifeStage === 'pregnant') calculatedWaterMl += 300;
   if (lifeStage === 'lactating') calculatedWaterMl += 700;
 
@@ -120,7 +115,7 @@ export function calculateDRI(profile) {
     monoFat: { target: monoFat, unit: 'g', label: 'Monounsaturated Fat', cat: 'macro' },
     polyFat: { target: polyFat, unit: 'g', label: 'Polyunsaturated Fat', cat: 'macro' },
     sugar: { target: 25, unit: 'g', label: 'Added Sugar Max', cat: 'macro', upperLimit: 36 },
-    water: { target: waterMl, unit: 'ml', label: 'Water (Personalized)', cat: 'macro' },
+    water: { target: waterMl, unit: 'ml', label: 'Water (Personalized)', cat: 'macro', upperLimit: waterMl * 1.6 },
     omega3: { target: isMale ? 1.6 : 1.1, unit: 'g', label: 'Omega-3 (ALA)', cat: 'macro' },
     omega6: { target: isMale ? 17 : 12, unit: 'g', label: 'Omega-6 (LA)', cat: 'macro' },
     cholesterol: { target: 200, unit: 'mg', label: 'Cholesterol Max', cat: 'macro', upperLimit: 300 },
@@ -202,6 +197,9 @@ export function calculateDRI(profile) {
   };
 }
 
+/**
+ * Returns Color Status for a given nutrient intake percentage vs target
+ */
 export function getNutrientStatus(current, targetObj) {
   if (!targetObj) return { color: 'slate', code: 'UNKNOWN', label: 'Normal', bg: 'bg-slate-800', text: 'text-slate-300' };
 
@@ -213,9 +211,9 @@ export function getNutrientStatus(current, targetObj) {
       color: 'red',
       code: 'TOXIC',
       label: '⚠️ Exceeds Upper Limit',
-      bg: 'bg-red-950/80 border-red-500/50',
-      text: 'text-red-400',
-      badge: '🔴 Too High (UL Exceeded)'
+      bg: 'bg-rose-950/80 border-rose-500/50',
+      text: 'text-rose-400',
+      badge: '🔴 Too Much (Exceeded)'
     };
   }
 
@@ -226,7 +224,7 @@ export function getNutrientStatus(current, targetObj) {
       label: '🔴 Deficient (<50%)',
       bg: 'bg-red-950/40 border-red-500/30',
       text: 'text-red-400',
-      badge: '🔴 Too Less'
+      badge: '🔴 Too Less (<50%)'
     };
   } else if (ratio >= 85 && ratio <= 125) {
     return {
@@ -235,16 +233,16 @@ export function getNutrientStatus(current, targetObj) {
       label: '🟢 Optimal (Perfect)',
       bg: 'bg-emerald-950/40 border-emerald-500/40',
       text: 'text-emerald-400',
-      badge: '🟢 Perfect'
+      badge: '🟢 Perfect (85-125%)'
     };
   } else if (ratio > 150) {
     return {
       color: 'red',
       code: 'TOO_MUCH',
       label: '🔴 Too High (>150%)',
-      bg: 'bg-rose-950/40 border-rose-500/30',
+      bg: 'bg-rose-950/50 border-rose-500/40',
       text: 'text-rose-400',
-      badge: '🔴 Too Much'
+      badge: '🔴 Too Much (>150% Exceeded)'
     };
   } else {
     return {
@@ -253,7 +251,7 @@ export function getNutrientStatus(current, targetObj) {
       label: '🟡 Moderate (50-85%)',
       bg: 'bg-amber-950/40 border-amber-500/30',
       text: 'text-amber-400',
-      badge: '🟡 Moderate'
+      badge: '🟡 Moderate (50-85%)'
     };
   }
 }

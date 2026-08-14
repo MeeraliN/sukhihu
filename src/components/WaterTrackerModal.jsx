@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Droplets, Clock, Camera, Plus, CheckCircle2, ShieldCheck, Flame, Info, Sparkles, X, BellRing, Volume2 } from 'lucide-react';
+import { Droplets, Clock, Camera, Plus, CheckCircle2, ShieldCheck, Flame, Info, Sparkles, X, BellRing, AlertTriangle } from 'lucide-react';
 
 export default function WaterTrackerModal({
   onClose,
@@ -14,25 +14,33 @@ export default function WaterTrackerModal({
   const [remindersEnabled, setRemindersEnabled] = useState(false);
 
   const remainingWaterMl = Math.max(0, waterTargetMl - loggedWaterMl);
-  const waterPct = Math.min(100, Math.round((loggedWaterMl / waterTargetMl) * 100));
+  const waterPct = Math.min(200, Math.round((loggedWaterMl / waterTargetMl) * 100));
 
-  // Extract user's personalized routine timings (or default fallback)
+  // WATER STATUS COLOR TRACING
+  // < 50% = RED (Too Less), 50-85% = YELLOW (Moderate), 85-125% = GREEN/CYAN (Perfect), > 125% = RED (Exceeded)
+  const waterStatus = waterPct < 50
+    ? { color: 'red', badge: '🔴 Too Less (<50%)', bg: 'bg-red-950/50 border-red-500/40', text: 'text-red-400', bar: 'from-red-500 to-rose-500' }
+    : waterPct <= 85
+    ? { color: 'yellow', badge: '🟡 Moderate (50-85%)', bg: 'bg-amber-950/50 border-amber-500/40', text: 'text-amber-300', bar: 'from-amber-500 to-yellow-400' }
+    : waterPct <= 125
+    ? { color: 'green', badge: '🟢 Perfect Hydration (85-125%)', bg: 'bg-cyan-950/60 border-cyan-500/50', text: 'text-cyan-300', bar: 'from-cyan-500 to-emerald-400' }
+    : { color: 'red', badge: '🔴 Exceeded / Too Much (>125%)', bg: 'bg-rose-950/60 border-rose-500/50', text: 'text-rose-400', bar: 'from-rose-500 to-red-600' };
+
+  // Extract user's personalized routine timings
   const wakeTime = profile?.routine?.wakeTime || '07:00';
   const breakfastTime = profile?.routine?.breakfastTime || '08:30';
   const lunchTime = profile?.routine?.lunchTime || '13:30';
   const dinnerTime = profile?.routine?.dinnerTime || '20:30';
   const bedTime = profile?.routine?.bedTime || '22:30';
 
-  // Calculate proportional water volumes for each slot based on total target
-  const slot1 = Math.round(waterTargetMl * 0.15); // Wake up
-  const slot2 = Math.round(waterTargetMl * 0.10); // Pre-breakfast
-  const slot3 = Math.round(waterTargetMl * 0.15); // Mid-morning focus
-  const slot4 = Math.round(waterTargetMl * 0.15); // Pre-lunch
-  const slot5 = Math.round(waterTargetMl * 0.15); // Afternoon anti-fatigue
-  const slot6 = Math.round(waterTargetMl * 0.15); // Pre-dinner
-  const slot7 = Math.round(waterTargetMl * 0.15); // Pre-bedtime
+  const slot1 = Math.round(waterTargetMl * 0.15);
+  const slot2 = Math.round(waterTargetMl * 0.10);
+  const slot3 = Math.round(waterTargetMl * 0.15);
+  const slot4 = Math.round(waterTargetMl * 0.15);
+  const slot5 = Math.round(waterTargetMl * 0.15);
+  const slot6 = Math.round(waterTargetMl * 0.15);
+  const slot7 = Math.round(waterTargetMl * 0.15);
 
-  // DYNAMIC PERSONALIZED HYDRATION SCHEDULE BASED ON USER ROUTINE
   const hydrationSchedule = [
     {
       timeStr: `${wakeTime} (Upon Waking)`,
@@ -101,12 +109,11 @@ export default function WaterTrackerModal({
         setRemindersEnabled(true);
       }
 
-      // Play audio chime test
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+      osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
       gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
       osc.connect(gain);
       gain.connect(audioCtx.destination);
@@ -184,24 +191,35 @@ export default function WaterTrackerModal({
         {activeTab === 'tracker' && (
           <div className="space-y-4">
             
-            {/* Daily Water Target Progress Card */}
-            <div className="p-4 rounded-2xl glass-card border border-cyan-500/30 bg-gradient-to-br from-cyan-950/40 via-slate-900 to-slate-900 space-y-3">
-              <div className="flex items-center justify-between text-xs font-bold">
-                <span className="text-slate-300">Logged Hydration:</span>
-                <span className="text-cyan-400 text-sm font-black">{loggedWaterMl} / {waterTargetMl} ml</span>
+            {/* COLOR-TRACEABLE WATER TARGET CARD */}
+            <div className={`p-4 rounded-2xl glass-card border ${waterStatus.bg} space-y-3 transition-all duration-300`}>
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-bold text-slate-300">
+                  Logged Hydration: <strong className={waterStatus.text}>{loggedWaterMl} / {waterTargetMl} ml</strong>
+                </div>
+                {/* Explicit Color Badge */}
+                <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border ${
+                  waterStatus.color === 'green' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' :
+                  waterStatus.color === 'red' ? 'bg-red-500/20 text-red-300 border-red-500/40' :
+                  'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                }`}>
+                  {waterStatus.badge}
+                </span>
               </div>
 
-              {/* Water Wave Progress Bar */}
+              {/* Color-Traceable Water Wave Progress Bar */}
               <div className="w-full bg-slate-950 h-3 rounded-full overflow-hidden border border-slate-800 relative">
                 <div
-                  className="h-full bg-gradient-to-r from-cyan-500 to-teal-400 transition-all duration-500"
-                  style={{ width: `${waterPct}%` }}
+                  className={`h-full bg-gradient-to-r ${waterStatus.bar} transition-all duration-500`}
+                  style={{ width: `${Math.min(100, waterPct)}%` }}
                 />
               </div>
 
-              <div className="flex items-center justify-between text-[11px] text-slate-400">
-                <span>{waterPct}% Target Met</span>
-                <span className="text-emerald-400 font-bold">{remainingWaterMl} ml Remaining</span>
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-slate-400">{waterPct}% Target Met</span>
+                <span className={`font-extrabold ${waterStatus.text}`}>
+                  {waterPct > 125 ? `⚠️ Exceeded by ${loggedWaterMl - waterTargetMl} ml` : `${remainingWaterMl} ml Remaining`}
+                </span>
               </div>
             </div>
 
