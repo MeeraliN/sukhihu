@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { getRecommendedFoods, HEALTH_GOALS } from '../services/foodRecommender';
-import { Sparkles, Plus, ShieldAlert, Target, TrendingDown, Scale, TrendingUp } from 'lucide-react';
+import { Sparkles, Plus, ShieldAlert, Target, Flame, Info, AlertTriangle } from 'lucide-react';
 
 export default function FoodRecommenderView({
   currentIntake,
@@ -13,7 +13,7 @@ export default function FoodRecommenderView({
   const [activeSubFilter, setActiveSubFilter] = useState(profileDiet);
 
   const result = getRecommendedFoods(currentIntake, driTargets, activeSubFilter, activeGoalId, weightGoal);
-  const { deficits, recommendations, activeGoal } = result;
+  const { deficits, recommendations, activeGoal, targetDailyCalories, loggedCalories, remainingCalories } = result;
 
   // Determine eligible diet filter options strictly based on user's profile diet
   const isProfileVegan = profileDiet === 'vegan';
@@ -42,7 +42,7 @@ export default function FoodRecommenderView({
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold">
             <Sparkles className="w-4 h-4" />
-            <span>CALORIE-EFFICIENT NUTRIENT OPTIMIZER</span>
+            <span>CALORIE-AWARE NUTRIENT OPTIMIZER</span>
           </div>
 
           {/* Active Weight Goal Pill */}
@@ -57,11 +57,7 @@ export default function FoodRecommenderView({
 
         <h2 className="text-xl font-extrabold text-slate-100">Calorie-Efficient Food Recommendations</h2>
         <p className="text-xs text-slate-400 mt-1">
-          {weightGoal === 'loss'
-            ? 'Foods ranked to deliver maximum micronutrients & protein with the least possible calories.'
-            : weightGoal === 'gain'
-            ? 'Nutrient-dense foods prioritized for clean caloric surplus & muscle gain.'
-            : 'Balanced foods ranked by maximum nutrient-to-calorie efficiency.'}
+          Calculated automatically based on your daily calories logged ({loggedCalories} kcal / {targetDailyCalories} kcal). Remaining room: <strong className="text-emerald-400">{remainingCalories} kcal</strong>.
         </p>
 
         {/* HEALTH FOCUS / GOAL TARGETER SELECTOR */}
@@ -131,74 +127,66 @@ export default function FoodRecommenderView({
         </div>
       )}
 
-      {/* Priority Deficits */}
-      {deficits && deficits.length > 0 && (
-        <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-          <div className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-            <ShieldAlert className="w-4 h-4 text-rose-400" />
-            <span>Active Nutrient Deficits ({deficits.length})</span>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {deficits.slice(0, 5).map((def) => (
-              <span
-                key={def.key}
-                className="px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-medium"
-              >
-                {def.label} ({Math.round(def.percentageAchieved)}%)
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Recommended Practical Foods */}
       <div className="space-y-3">
         <h3 className="text-sm font-bold text-slate-300 px-1 flex items-center justify-between">
           <span>Least Calories, Max Nutrients Picks</span>
-          <span className="text-[10px] text-emerald-400 font-semibold">Ranked by Caloric Efficiency</span>
+          <span className="text-[10px] text-emerald-400 font-semibold">Portion Scaled for Caloric Budget</span>
         </h3>
 
         {recommendations.map((food) => (
           <div
             key={food.id}
-            className="p-4 rounded-2xl glass-card border border-slate-800 flex items-center justify-between gap-3 hover:border-emerald-500/40 transition"
+            className="p-4 rounded-2xl glass-card border border-slate-800 space-y-3 hover:border-emerald-500/40 transition"
           >
-            <div className="flex items-center gap-3">
-              <span className="text-3xl p-2 rounded-2xl bg-slate-900 border border-slate-800">
-                {food.icon}
-              </span>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h4 className="font-bold text-slate-100 text-sm">{food.name}</h4>
-                  <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-extrabold">
-                    {food.nutrientsPer100g.calories} kcal / 100g
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400">{food.servingUnit} ({food.category})</p>
-
-                {/* Key Benefit Badges */}
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {food.benefits.map((b, i) => (
-                    <span
-                      key={i}
-                      className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 text-[10px] font-semibold"
-                    >
-                      {b}
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl p-2 rounded-2xl bg-slate-950 border border-slate-800">
+                  {food.icon}
+                </span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-bold text-slate-100 text-sm">{food.name}</h4>
+                    <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-extrabold">
+                      {food.nutrientsPer100g.calories} kcal / 100g
                     </span>
-                  ))}
+                  </div>
+                  <p className="text-xs text-slate-400">{food.servingUnit} ({food.category})</p>
+
+                  {/* Key Benefit Badges */}
+                  <div className="flex flex-wrap gap-1.5 mt-1.5">
+                    {food.benefits.map((b, i) => (
+                      <span
+                        key={i}
+                        className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 text-[10px] font-semibold"
+                      >
+                        {b}
+                      </span>
+                    ))}
+                  </div>
                 </div>
+              </div>
+
+              {/* Add to Intake Button (Using Budget-Friendly Suggested Portion) */}
+              <button
+                type="button"
+                onClick={() => onAddFoodToLog(food, food.suggestedPortionGrams)}
+                className="px-3.5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 shrink-0 transition active:scale-95 shadow-md shadow-emerald-500/20"
+              >
+                <Plus className="w-4 h-4 stroke-[3]" />
+                <span>Log ({food.suggestedPortionGrams}g)</span>
+              </button>
+            </div>
+
+            {/* EXPLICIT CALORIC IMPACT NOTE */}
+            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-[11px] font-medium flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold text-amber-300 block mb-0.5">Caloric & Nutrient Impact Note:</span>
+                <span>{food.calorieImpactNote}</span>
               </div>
             </div>
 
-            {/* Add to Intake Button */}
-            <button
-              type="button"
-              onClick={() => onAddFoodToLog(food, food.servingGram)}
-              className="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 shrink-0 transition active:scale-95 shadow-md shadow-emerald-500/20"
-            >
-              <Plus className="w-4 h-4 stroke-[3]" />
-              <span>Log</span>
-            </button>
           </div>
         ))}
       </div>

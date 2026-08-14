@@ -48,8 +48,8 @@ export function calculateDRI(profile) {
 
   // 4. Protein scaling (1.2g to 2.2g per kg depending on activity and goal)
   let proteinPerKg = activityLevel === 'sedentary' ? 1.0 : (activityLevel === 'active' || activityLevel === 'extra') ? 1.8 : 1.4;
-  if (weightGoal === 'loss') proteinPerKg += 0.3; // Higher protein preserves muscle in deficit
-  if (weightGoal === 'gain') proteinPerKg += 0.4; // Higher protein fuels muscle synthesis
+  if (weightGoal === 'loss') proteinPerKg += 0.3;
+  if (weightGoal === 'gain') proteinPerKg += 0.4;
 
   let protein = Math.round(weightKg * proteinPerKg);
   if (lifeStage === 'pregnant' || lifeStage === 'lactating') protein += 25;
@@ -121,9 +121,6 @@ export function calculateDRI(profile) {
 
 /**
  * Returns Color Status for a given nutrient intake percentage vs target
- * 🔴 RED: Deficient (< 50%) or Excess/Toxic (> 150% or > UL)
- * 🟢 GREEN: Perfect / Optimal (85% - 125%)
- * 🟡 YELLOW: Moderate (50% - 85% or 125% - 150%)
  */
 export function getNutrientStatus(current, targetObj) {
   if (!targetObj) return { color: 'slate', code: 'UNKNOWN', label: 'Normal', bg: 'bg-slate-800', text: 'text-slate-300' };
@@ -131,7 +128,6 @@ export function getNutrientStatus(current, targetObj) {
   const { target, upperLimit } = targetObj;
   const ratio = (current / target) * 100;
 
-  // Check Upper Limit Toxicity first if defined
   if (upperLimit && current > upperLimit) {
     return {
       color: 'red',

@@ -63,10 +63,16 @@ export const HEALTH_GOALS = [
 ];
 
 /**
- * Calorie-Efficiency Nutrient Optimizer & Food Recommender
+ * Calorie-Aware Nutrient Optimizer & Food Recommender
+ * Generates an explicit "Caloric Impact Note" for every food item (e.g. 100g Sesame seeds = 573 kcal, 975mg Calcium).
+ * Calculates recommended calorie-budget-friendly portion sizes (e.g. 25g portion = 143 kcal for 244mg Calcium).
  */
 export function getRecommendedFoods(currentIntake, driTargets, dietFilter = 'veg', activeGoalId = 'hair_fall', weightGoal = 'maintain') {
   if (!currentIntake || !driTargets) return { deficits: [], recommendations: [] };
+
+  const targetDailyCalories = driTargets.calories?.target || 2000;
+  const loggedCalories = currentIntake.calories || 0;
+  const remainingCalories = Math.max(100, targetDailyCalories - loggedCalories);
 
   // 1. Filter USDA database strictly by user's active dietary choice
   const eligibleFoods = USDA_DATABASE.filter(item => {
@@ -102,7 +108,7 @@ export function getRecommendedFoods(currentIntake, driTargets, dietFilter = 'veg
   const activeGoal = HEALTH_GOALS.find(g => g.id === activeGoalId) || HEALTH_GOALS[0];
   const goalBoostKeys = activeGoal.boostNutrients;
 
-  // 4. Score each food based on CALORIC EFFICIENCY & GOAL BOOST
+  // 4. Score each food based on CALORIC EFFICIENCY, GOAL BOOST & CALORIC IMPACT
   const scoredFoods = eligibleFoods.map(food => {
     let nutrientFillPoints = 0;
     const keyBenefits = [];
@@ -114,7 +120,7 @@ export function getRecommendedFoods(currentIntake, driTargets, dietFilter = 'veg
       const pctContrib = (valInFood / targetVal) * 100;
       
       if (pctContrib >= 5) {
-        nutrientFillPoints += pctContrib * 5.0; // High priority boost for goal!
+        nutrientFillPoints += pctContrib * 5.0;
         const label = driTargets[gKey]?.label || gKey;
         keyBenefits.push(`For ${activeGoal.name}: Rich in ${label}`);
       }
@@ -136,28 +142,54 @@ export function getRecommendedFoods(currentIntake, driTargets, dietFilter = 'veg
 
     const cals100g = Math.max(15, food.nutrientsPer100g.calories);
 
-    // CALORIE EFFICIENCY FORMULA
+    // CALORIE EFFICIENCY & BUDGET PORTION CALCULATION
+    // e.g. 100g Sesame Seeds = 573 kcal & 975mg Calcium
+    // Smart Suggested Portion = 25g (143 kcal) giving 244mg Calcium safely
+    let suggestedPortionGrams = 100;
+    if (cals100g > 350) {
+      suggestedPortionGrams = 25; // Small portion for dense seeds/nuts
+    } else if (cals100g > 180) {
+      suggestedPortionGrams = 50; // Medium portion for paneer/meats
+    } else {
+      suggestedPortionGrams = 150; // Larger portion for greens/vegetables
+    }
+
+    const suggestedCalories = Math.round((cals100g * suggestedPortionGrams) / 100);
+    const suggestedPctBudget = Math.round((suggestedCalories / targetDailyCalories) * 100);
+
+    // Primary micronutrient highlight for note (e.g. Calcium in sesame seeds)
+    const topNutrientKey = goalBoostKeys[0] || deficitNutrients[0]?.key || 'calcium';
+    const topNutrientVal100g = food.nutrientsPer100g[topNutrientKey] || food.nutrientsPer100g.calcium || 0;
+    const topNutrientName = driTargets[topNutrientKey]?.label || 'Calcium';
+    const topNutrientUnit = driTargets[topNutrientKey]?.unit || 'mg';
+
+    const topNutrientSuggestedVal = Math.round((topNutrientVal100g * suggestedPortionGrams) / 100);
+
+    // PERFECT CALORIC IMPACT NOTE
+    const calorieImpactNote = `⚠️ Caloric Note: 100g contains ${cals100g} kcal (${topNutrientVal100g}${topNutrientUnit} ${topNutrientName}). Recommended portion: ${suggestedPortionGrams}g adds ${suggestedCalories} kcal (${suggestedPctBudget}% of ${targetDailyCalories} kcal daily budget) for ${topNutrientSuggestedVal}${topNutrientUnit} ${topNutrientName}.`;
+
     let finalScore = 0;
     const nutrientDensityRatio = (nutrientFillPoints / cals100g) * 10;
 
     if (weightGoal === 'loss' || activeGoalId === 'weight_loss') {
       finalScore = nutrientDensityRatio * 18 + (300 - cals100g) * 0.15;
-      keyBenefits.unshift(`🔥 Max Nutrients for ${food.nutrientsPer100g.calories} kcal/100g`);
     } else if (weightGoal === 'gain' || activeGoalId === 'weight_gain') {
       finalScore = nutrientFillPoints * 1.5 + (cals100g * 0.3);
-      keyBenefits.unshift(`💪 Clean Caloric & Nutrient Surplus (${food.nutrientsPer100g.calories} kcal)`);
     } else {
       finalScore = nutrientDensityRatio * 10 + nutrientFillPoints * 0.6;
-      keyBenefits.unshift(`⚡ High Calorie-to-Nutrient Efficiency`);
     }
 
     if (food.practicalDaily) {
-      finalScore += 25; // Daily staple practicality bonus
+      finalScore += 25;
     }
 
     return {
       ...food,
       score: finalScore,
+      suggestedPortionGrams,
+      suggestedCalories,
+      suggestedPctBudget,
+      calorieImpactNote,
       nutrientDensityRatio: Math.round(nutrientDensityRatio * 10) / 10,
       benefits: Array.from(new Set(keyBenefits)).slice(0, 3)
     };
@@ -168,6 +200,9 @@ export function getRecommendedFoods(currentIntake, driTargets, dietFilter = 'veg
   return {
     deficits: deficitNutrients,
     recommendations: scoredFoods.slice(0, 10),
-    activeGoal
+    activeGoal,
+    targetDailyCalories,
+    loggedCalories,
+    remainingCalories
   };
 }
