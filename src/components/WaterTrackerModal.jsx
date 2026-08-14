@@ -17,12 +17,12 @@ export default function WaterTrackerModal({
   const [showVesselEditor, setShowVesselEditor] = useState(false);
   const [remindersEnabled, setRemindersEnabled] = useState(false);
 
-  // Personalized Vessels
+  // Professional Hydration Symbols & Standard Default Container Names
   const defaultVessels = [
     { id: 'small_glass', name: 'Small Glass', ml: 150, icon: '🥛' },
-    { id: 'big_glass', name: 'Big Glass', ml: 300, icon: '🍷' },
-    { id: 'personal_bottle', name: 'Personal Bottle', ml: 750, icon: '🍾' },
-    { id: 'large_jug', name: 'Large Jug/Flask', ml: 1000, icon: '🍶' }
+    { id: 'big_glass', name: 'Big Glass', ml: 300, icon: '🫗' },
+    { id: 'personal_bottle', name: 'Personal Bottle', ml: 750, icon: '💧' },
+    { id: 'large_jug', name: 'Large Flask', ml: 1000, icon: '🧊' }
   ];
 
   const [vessels, setVessels] = useState(profile?.customVessels || defaultVessels);
@@ -189,21 +189,21 @@ export default function WaterTrackerModal({
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
-                  My Custom Glass & Bottle Names
+                  Glass & Bottle Presets
                 </label>
                 <button
                   type="button"
                   onClick={() => setShowVesselEditor(!showVesselEditor)}
                   className="text-[10px] text-cyan-400 font-extrabold flex items-center gap-1 hover:underline"
                 >
-                  <Edit3 className="w-3 h-3" /> Edit Container Names & Capacity
+                  <Edit3 className="w-3 h-3" /> Edit Names & Capacity
                 </button>
               </div>
 
-              {/* EDIT VESSEL DRAWER (EDIT NAMES, ICONS & ML) */}
+              {/* EDIT VESSEL DRAWER */}
               {showVesselEditor && (
                 <div className="p-3.5 rounded-2xl bg-slate-950 border border-cyan-500/40 space-y-2.5 animate-in fade-in duration-200">
-                  <div className="text-xs font-bold text-cyan-300">Customize Container Names, Icons & Capacity</div>
+                  <div className="text-xs font-bold text-cyan-300">Customize Container Names, Symbols & Capacity</div>
                   <div className="space-y-2 text-xs">
                     {vessels.map(v => (
                       <div key={v.id} className="p-2 rounded-xl bg-slate-900 border border-slate-800 flex items-center gap-2">
@@ -219,7 +219,7 @@ export default function WaterTrackerModal({
                           value={v.name}
                           onChange={(e) => handleVesselFieldChange(v.id, 'name', e.target.value)}
                           className="flex-1 p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs font-bold text-slate-100"
-                          placeholder="Container Name (e.g. My Steel Bottle)"
+                          placeholder="Container Name"
                         />
                         <div className="flex items-center gap-1 shrink-0">
                           <input
@@ -239,7 +239,7 @@ export default function WaterTrackerModal({
                     onClick={handleSaveVessels}
                     className="w-full py-2 rounded-xl bg-cyan-500 text-slate-950 text-xs font-black flex items-center justify-center gap-1"
                   >
-                    <Save className="w-3.5 h-3.5" /> Save My Container Names & Presets
+                    <Save className="w-3.5 h-3.5" /> Save Container Settings
                   </button>
                 </div>
               )}
