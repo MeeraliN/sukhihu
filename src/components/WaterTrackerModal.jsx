@@ -17,12 +17,16 @@ export default function WaterTrackerModal({
   const [showVesselEditor, setShowVesselEditor] = useState(false);
   const [remindersEnabled, setRemindersEnabled] = useState(false);
 
-  // Professional Hydration Symbols & Standard Default Container Names
+  // Exact Default Container Presets Requested by User:
+  // 1. Small Glass (150 ml)
+  // 2. Big Glass (300 ml)
+  // 3. Small Bottle (750 ml)
+  // 4. Big Bottle (1000 ml / 1L)
   const defaultVessels = [
-    { id: 'small_glass', name: 'Small Glass', ml: 150, icon: '🥛' },
+    { id: 'small_glass', name: 'Small Glass', ml: 150, icon: '🫗' },
     { id: 'big_glass', name: 'Big Glass', ml: 300, icon: '🫗' },
-    { id: 'personal_bottle', name: 'Personal Bottle', ml: 750, icon: '💧' },
-    { id: 'large_jug', name: 'Large Flask', ml: 1000, icon: '🧊' }
+    { id: 'small_bottle', name: 'Small Bottle', ml: 750, icon: '💧' },
+    { id: 'big_bottle', name: 'Big Bottle', ml: 1000, icon: '🍶' }
   ];
 
   const [vessels, setVessels] = useState(profile?.customVessels || defaultVessels);
@@ -196,7 +200,7 @@ export default function WaterTrackerModal({
                   onClick={() => setShowVesselEditor(!showVesselEditor)}
                   className="text-[10px] text-cyan-400 font-extrabold flex items-center gap-1 hover:underline"
                 >
-                  <Edit3 className="w-3 h-3" /> Edit Names & Capacity
+                  <Edit3 className="w-3 h-3" /> Edit Container Settings
                 </button>
               </div>
 
@@ -212,7 +216,7 @@ export default function WaterTrackerModal({
                           value={v.icon}
                           onChange={(e) => handleVesselFieldChange(v.id, 'icon', e.target.value)}
                           className="w-8 text-center p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-sm"
-                          placeholder="🥛"
+                          placeholder="🫗"
                         />
                         <input
                           type="text"
@@ -244,7 +248,7 @@ export default function WaterTrackerModal({
                 </div>
               )}
 
-              {/* PERSONALIZED QUICK LOG BUTTONS */}
+              {/* PERSONALIZED QUICK LOG BUTTONS (WITH SIZED ICONS) */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {vessels.map((item) => (
                   <button
@@ -253,7 +257,10 @@ export default function WaterTrackerModal({
                     onClick={() => handleQuickLog(item.ml)}
                     className="p-3 rounded-xl bg-slate-950 border border-slate-800 hover:border-cyan-500/50 transition flex flex-col items-center gap-1 active:scale-95"
                   >
-                    <span className="text-2xl">{item.icon}</span>
+                    {/* Scaled Icon Sizes for Small vs Big Glass/Bottle */}
+                    <span className={item.id === 'big_glass' || item.id === 'big_bottle' ? 'text-3xl' : 'text-xl'}>
+                      {item.icon}
+                    </span>
                     <span className="text-xs font-bold text-slate-200 truncate max-w-full">{item.name}</span>
                     <span className="text-[10px] text-cyan-400 font-black">+{item.ml} ml</span>
                   </button>
