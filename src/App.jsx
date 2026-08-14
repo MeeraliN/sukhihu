@@ -91,7 +91,8 @@ export default function App() {
 
   const handleUpdateProfile = (profileData, computedDRI) => {
     setProfile(profileData);
-    setDriTargets(computedDRI);
+    const updatedDRI = computedDRI || calculateDRI(profileData);
+    setDriTargets(updatedDRI);
     localStorage.setItem(STORAGE_KEY_PROFILE, JSON.stringify(profileData));
   };
 
@@ -279,6 +280,7 @@ export default function App() {
           onDeleteWaterLog={handleDeleteWaterLog}
           waterLogs={waterLogs}
           profile={profile}
+          onUpdateProfile={handleUpdateProfile}
         />
       )}
 

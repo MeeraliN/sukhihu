@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Droplets, Clock, Camera, Plus, CheckCircle2, ShieldCheck, Flame, Info, Sparkles, X, BellRing, Trash2 } from 'lucide-react';
+import { Droplets, Clock, Camera, Plus, CheckCircle2, ShieldCheck, Flame, Info, Sparkles, X, BellRing, Trash2, Edit3, Save } from 'lucide-react';
 
 export default function WaterTrackerModal({
   onClose,
@@ -8,12 +8,24 @@ export default function WaterTrackerModal({
   onLogWater,
   onDeleteWaterLog,
   waterLogs = [],
-  profile
+  profile,
+  onUpdateProfile
 }) {
   const [customMl, setCustomMl] = useState(250);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [activeTab, setActiveTab] = useState('tracker'); // 'tracker' | 'schedule'
+  const [showVesselEditor, setShowVesselEditor] = useState(false);
   const [remindersEnabled, setRemindersEnabled] = useState(false);
+
+  // Personalized Vessels (or default customizable fallback)
+  const defaultVessels = [
+    { id: 'small_glass', name: 'Small Glass', ml: 150, icon: '🥛' },
+    { id: 'big_glass', name: 'Big Glass', ml: 300, icon: '🍷' },
+    { id: 'personal_bottle', name: 'Personal Bottle', ml: 750, icon: '🍾' },
+    { id: 'large_jug', name: 'Large Jug/Flask', ml: 1000, icon: '🍶' }
+  ];
+
+  const [vessels, setVessels] = useState(profile?.customVessels || defaultVessels);
 
   const remainingWaterMl = Math.max(0, waterTargetMl - loggedWaterMl);
   const waterPct = Math.min(200, Math.round((loggedWaterMl / waterTargetMl) * 100));
@@ -32,14 +44,13 @@ export default function WaterTrackerModal({
   const expectedWaterByNowMl = Math.round(waterTargetMl * dayPaceRatio);
   const isHydrationOnTrackByNow = loggedWaterMl >= (expectedWaterByNowMl * 0.8);
 
-  // WATER STATUS COLOR TRACING (YELLOW for under-target, GREEN for on-track, RED for overflow)
   const waterStatus = loggedWaterMl >= (waterTargetMl * 1.5)
     ? { color: 'red', badge: '🔴 Exceeded Limit (>150%)', bg: 'bg-rose-950/60 border-rose-500/50', text: 'text-rose-400', bar: 'from-rose-500 to-red-600' }
     : isHydrationOnTrackByNow
     ? { color: 'green', badge: '🟢 Perfect On Track', bg: 'bg-cyan-950/60 border-cyan-500/50', text: 'text-cyan-300', bar: 'from-cyan-500 to-emerald-400' }
     : { color: 'yellow', badge: `🟡 Under Pace (${expectedWaterByNowMl}ml expected by now)`, bg: 'bg-amber-950/50 border-amber-500/40', text: 'text-amber-300', bar: 'from-amber-500 to-yellow-400' };
 
-  // Extract user's personalized routine timings
+  // Routine Timings
   const wakeTime = profile?.routine?.wakeTime || '07:00';
   const breakfastTime = profile?.routine?.breakfastTime || '08:30';
   const lunchTime = profile?.routine?.lunchTime || '13:30';
@@ -55,86 +66,30 @@ export default function WaterTrackerModal({
   const slot7 = Math.round(waterTargetMl * 0.15);
 
   const hydrationSchedule = [
-    {
-      timeStr: `${wakeTime} (Upon Waking)`,
-      amountMl: slot1,
-      icon: '🌅',
-      purpose: 'Flush overnight metabolic toxins, activate internal organs & kickstart digestive peristalsis.',
-      bestTip: 'Drink warm or room-temperature water immediately upon waking.'
-    },
-    {
-      timeStr: `${breakfastTime} (30 Mins Before Breakfast)`,
-      amountMl: slot2,
-      icon: '🍳',
-      purpose: 'Prepare gastric mucosal lining & hydrolyze digestive enzymes for peak nutrient breakdown.',
-      bestTip: 'Avoid gulping large amounts during eating to prevent gastric enzyme dilution.'
-    },
-    {
-      timeStr: '11:00 AM (Mid-Morning Focus)',
-      amountMl: slot3,
-      icon: '🧠',
-      purpose: 'Prevent micro-dehydration, eliminate brain fog, and maintain neuronal synaptic speed.',
-      bestTip: 'Ideal time to add a pinch of electrolyte salts or lemon if sweating.'
-    },
-    {
-      timeStr: `${lunchTime} (30 Mins Before Lunch)`,
-      amountMl: slot4,
-      icon: '🥗',
-      purpose: 'Lubricate digestive canal & naturally curb appetite to prevent overeating.',
-      bestTip: 'Sip slowly 30 minutes prior to your main meal.'
-    },
-    {
-      timeStr: '04:00 PM (Afternoon Anti-Fatigue)',
-      amountMl: slot5,
-      icon: '⚡',
-      purpose: 'Flush renal metabolic waste, revive cellular ATP energy & prevent afternoon sluggishness.',
-      bestTip: 'Replaces afternoon sugar cravings with cellular hydration.'
-    },
-    {
-      timeStr: `${dinnerTime} (30 Mins Before Dinner)`,
-      amountMl: slot6,
-      icon: '🍛',
-      purpose: 'Balance gastric acid pH & support micronutrient assimilation during evening meal.',
-      bestTip: 'Prepares the stomach for evening digestion.'
-    },
-    {
-      timeStr: `${bedTime} (1 Hour Before Bed)`,
-      amountMl: slot7,
-      icon: '🌙',
-      purpose: 'Prevent nocturnal blood viscosity, lower stroke risk & support overnight tissue repair.',
-      bestTip: 'Drink 1 hour before sleeping to avoid nighttime sleep disruption (nocturia).'
-    }
+    { timeStr: `${wakeTime} (Upon Waking)`, amountMl: slot1, icon: '🌅', purpose: 'Flush overnight metabolic toxins & activate internal organs.' },
+    { timeStr: `${breakfastTime} (30 Mins Before Breakfast)`, amountMl: slot2, icon: '🍳', purpose: 'Prepare gastric mucosal lining for nutrient absorption.' },
+    { timeStr: '11:00 AM (Mid-Morning Focus)', amountMl: slot3, icon: '🧠', purpose: 'Prevent micro-dehydration and brain fog.' },
+    { timeStr: `${lunchTime} (30 Mins Before Lunch)`, amountMl: slot4, icon: '🥗', purpose: 'Lubricate digestive canal & curb overeating.' },
+    { timeStr: '04:00 PM (Afternoon Anti-Fatigue)', amountMl: slot5, icon: '⚡', purpose: 'Flush cellular waste & revive ATP energy.' },
+    { timeStr: `${dinnerTime} (30 Mins Before Dinner)`, amountMl: slot6, icon: '🍛', purpose: 'Balance gastric acid pH & support digestion.' },
+    { timeStr: `${bedTime} (1 Hour Before Bed)`, amountMl: slot7, icon: '🌙', purpose: 'Prevent nocturnal blood viscosity & support repair.' }
   ];
 
-  const handleToggleReminders = () => {
-    if (!remindersEnabled) {
-      if ('Notification' in window) {
-        Notification.requestPermission().then((perm) => {
-          if (perm === 'granted') {
-            setRemindersEnabled(true);
-            new Notification('sukhihu Hydration Alarm Enabled', {
-              body: `Water reminders set based on your routine timings (${wakeTime} - ${bedTime}).`,
-              icon: '/icon-192.png'
-            });
-          }
-        });
-      } else {
-        setRemindersEnabled(true);
-      }
+  const handleVesselMlChange = (id, newMl) => {
+    const updated = vessels.map(v => v.id === id ? { ...v, ml: Number(newMl) } : v);
+    setVessels(updated);
+  };
 
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
-      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start();
-      osc.stop(audioCtx.currentTime + 0.3);
-    } else {
-      setRemindersEnabled(false);
+  const handleSaveVessels = () => {
+    if (onUpdateProfile && profile) {
+      onUpdateProfile({ ...profile, customVessels: vessels });
     }
+    setShowVesselEditor(false);
+  };
+
+  const handleQuickLog = (ml) => {
+    onLogWater(ml);
+    setPhotoPreview(null);
   };
 
   const handlePhotoUpload = (e) => {
@@ -146,11 +101,6 @@ export default function WaterTrackerModal({
       };
       reader.readAsDataURL(file);
     }
-  };
-
-  const handleQuickLog = (ml) => {
-    onLogWater(ml);
-    setPhotoPreview(null);
   };
 
   return (
@@ -210,7 +160,6 @@ export default function WaterTrackerModal({
                 <div className="text-xs font-bold text-slate-300">
                   Logged Hydration: <strong className={waterStatus.text}>{loggedWaterMl} / {waterTargetMl} ml</strong>
                 </div>
-                {/* Explicit Color Badge */}
                 <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border ${
                   waterStatus.color === 'green' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' :
                   waterStatus.color === 'red' ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' :
@@ -220,7 +169,7 @@ export default function WaterTrackerModal({
                 </span>
               </div>
 
-              {/* Color-Traceable Water Wave Progress Bar */}
+              {/* Progress Bar */}
               <div className="w-full bg-slate-950 h-3 rounded-full overflow-hidden border border-slate-800 relative">
                 <div
                   className={`h-full bg-gradient-to-r ${waterStatus.bar} transition-all duration-500`}
@@ -236,34 +185,93 @@ export default function WaterTrackerModal({
               </div>
             </div>
 
-            {/* Quick Logging Presets */}
+            {/* PERSONALIZED VESSEL PRESETS GRID */}
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
-                Quick Log Water Volume
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
+                  My Personal Glass & Bottle Presets
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowVesselEditor(!showVesselEditor)}
+                  className="text-[10px] text-cyan-400 font-extrabold flex items-center gap-1 hover:underline"
+                >
+                  <Edit3 className="w-3 h-3" /> Edit My Bottle Sizes
+                </button>
+              </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {[
-                  { label: '1 Glass', ml: 250, icon: '🥛' },
-                  { label: '1 Bottle', ml: 500, icon: '🍼' },
-                  { label: '750 ml', ml: 750, icon: '🥤' },
-                  { label: '1 Litre', ml: 1000, icon: '🍶' }
-                ].map((item) => (
+              {/* EDIT VESSEL DRAWER */}
+              {showVesselEditor && (
+                <div className="p-3.5 rounded-2xl bg-slate-950 border border-cyan-500/40 space-y-2.5 animate-in fade-in duration-200">
+                  <div className="text-xs font-bold text-cyan-300">Customize Your Personal Glasses & Bottles</div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    {vessels.map(v => (
+                      <div key={v.id} className="space-y-1">
+                        <label className="text-[10px] text-slate-400 font-semibold">{v.icon} {v.name}</label>
+                        <input
+                          type="number"
+                          step="10"
+                          value={v.ml}
+                          onChange={(e) => handleVesselMlChange(v.id, e.target.value)}
+                          className="w-full p-2 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-100"
+                        />
+                      </div>
+                    ))}
+                  </div>
                   <button
-                    key={item.ml}
+                    type="button"
+                    onClick={handleSaveVessels}
+                    className="w-full py-2 rounded-xl bg-cyan-500 text-slate-950 text-xs font-black flex items-center justify-center gap-1"
+                  >
+                    <Save className="w-3.5 h-3.5" /> Save My Personal Presets
+                  </button>
+                </div>
+              )}
+
+              {/* PERSONALIZED QUICK LOG BUTTONS */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {vessels.map((item) => (
+                  <button
+                    key={item.id}
                     type="button"
                     onClick={() => handleQuickLog(item.ml)}
                     className="p-3 rounded-xl bg-slate-950 border border-slate-800 hover:border-cyan-500/50 transition flex flex-col items-center gap-1 active:scale-95"
                   >
                     <span className="text-2xl">{item.icon}</span>
-                    <span className="text-xs font-bold text-slate-200">{item.label}</span>
-                    <span className="text-[10px] text-cyan-400 font-semibold">+{item.ml} ml</span>
+                    <span className="text-xs font-bold text-slate-200">{item.name}</span>
+                    <span className="text-[10px] text-cyan-400 font-black">+{item.ml} ml</span>
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Photo Scanner Upload for Water Glass/Bottle */}
+            {/* Custom ML Input with 10ml Stepper */}
+            <div className="space-y-1">
+              <label className="text-[10px] text-slate-400 font-semibold block">
+                Custom Exact Amount (Increments of 10 ml)
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  step="10"
+                  min="10"
+                  max="5000"
+                  value={customMl}
+                  onChange={(e) => setCustomMl(Number(e.target.value))}
+                  placeholder="Custom ml (e.g. 270)"
+                  className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-slate-100 focus:outline-none focus:border-cyan-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleQuickLog(customMl)}
+                  className="px-4 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold flex items-center gap-1 shrink-0"
+                >
+                  <Plus className="w-4 h-4 stroke-[3]" /> Log ml
+                </button>
+              </div>
+            </div>
+
+            {/* Photo Scanner Upload */}
             <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -291,24 +299,6 @@ export default function WaterTrackerModal({
                   </div>
                 </div>
               )}
-            </div>
-
-            {/* Custom ML Input */}
-            <div className="flex gap-2">
-              <input
-                type="number"
-                value={customMl}
-                onChange={(e) => setCustomMl(Number(e.target.value))}
-                placeholder="Custom ml (e.g. 300)"
-                className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-slate-100 focus:outline-none focus:border-cyan-500"
-              />
-              <button
-                type="button"
-                onClick={() => handleQuickLog(customMl)}
-                className="px-4 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold flex items-center gap-1 shrink-0"
-              >
-                <Plus className="w-4 h-4 stroke-[3]" /> Log ml
-              </button>
             </div>
 
             {/* LOGGED WATER HISTORY LIST WITH DELETE BUTTON */}
@@ -348,8 +338,6 @@ export default function WaterTrackerModal({
 
         {activeTab === 'schedule' && (
           <div className="space-y-3">
-            
-            {/* Alarm Reminder Toggle Button */}
             <div className="p-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-between">
               <div className="flex items-center gap-2.5 text-xs text-cyan-200">
                 <BellRing className="w-4 h-4 text-cyan-400 shrink-0" />
@@ -358,20 +346,8 @@ export default function WaterTrackerModal({
                   <span className="text-[10px] text-cyan-300">Set automatically to your routine ({wakeTime} - {bedTime})</span>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={handleToggleReminders}
-                className={`px-3 py-1.5 rounded-xl text-xs font-black transition ${
-                  remindersEnabled
-                    ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
-                    : 'bg-slate-950 text-slate-400 border border-slate-800'
-                }`}
-              >
-                {remindersEnabled ? '🔔 Alarms ON' : '🔕 Enable Alarms'}
-              </button>
             </div>
 
-            {/* Hydration Schedule List */}
             <div className="space-y-2.5">
               {hydrationSchedule.map((item, index) => (
                 <div key={index} className="p-3.5 rounded-2xl glass-card border border-slate-800 space-y-1.5">
@@ -384,14 +360,9 @@ export default function WaterTrackerModal({
                       {item.amountMl} ml
                     </span>
                   </div>
-
                   <p className="text-xs text-slate-300 font-medium">
                     <strong className="text-cyan-400">Purpose:</strong> {item.purpose}
                   </p>
-
-                  <div className="text-[10px] text-slate-400 italic bg-slate-950/60 p-2 rounded-lg border border-slate-800/80">
-                    💡 Tip: {item.bestTip}
-                  </div>
                 </div>
               ))}
             </div>
