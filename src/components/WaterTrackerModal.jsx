@@ -1,6 +1,59 @@
 import React, { useState } from 'react';
 import { Droplets, Clock, Camera, Plus, CheckCircle2, ShieldCheck, Flame, Info, Sparkles, X, BellRing, Trash2, Edit3, Save } from 'lucide-react';
 
+// CLEAN SVG WATER VESSEL GRAPHICS WITH FILLED BLUE WATER
+function WaterVesselIcon({ type, size = 'sm' }) {
+  const isBig = size === 'big';
+  
+  if (type === 'small_glass' || type === 'big_glass') {
+    // WATER GLASS SVG WITH FILLED BLUE WATER
+    const width = isBig ? 32 : 24;
+    const height = isBig ? 38 : 28;
+    return (
+      <svg width={width} height={height} viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg" className="transition-transform duration-200">
+        {/* Glass Outer Rim */}
+        <path d="M6 6L9 36C9.2 37.5 10.5 38.5 12 38.5H20C21.5 38.5 22.8 37.5 23 36L26 6H6Z" stroke="#38bdf8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="#0f172a"/>
+        {/* Filled Blue Water */}
+        <path d="M8 14L9.5 34.5C9.6 35.3 10.3 36 11.2 36H20.8C21.7 36 22.4 35.3 22.5 34.5L24 14H8Z" fill="url(#waterGrad)"/>
+        {/* Water Surface Wave */}
+        <path d="M8 14C11 16 13 13 16 14C19 15 21 13 24 14" stroke="#0ea5e9" strokeWidth="1.5" strokeLinecap="round"/>
+        {/* Glass Highlight Shine */}
+        <path d="M9 10L10.5 30" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.5"/>
+        <defs>
+          <linearGradient id="waterGrad" x1="16" y1="14" x2="16" y2="36" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#38bdf8" />
+            <stop offset="1" stopColor="#0284c7" />
+          </linearGradient>
+        </defs>
+      </svg>
+    );
+  } else {
+    // WATER BOTTLE SVG WITH FILLED BLUE WATER
+    const width = isBig ? 34 : 26;
+    const height = isBig ? 42 : 32;
+    return (
+      <svg width={width} height={height} viewBox="0 0 32 44" fill="none" xmlns="http://www.w3.org/2000/svg" className="transition-transform duration-200">
+        {/* Bottle Cap */}
+        <rect x="12" y="2" width="8" height="4" rx="1.5" fill="#0284c7" stroke="#38bdf8" strokeWidth="1.5" />
+        {/* Bottle Neck */}
+        <path d="M13 6H19V11L24 15V38C24 39.7 22.7 41 21 41H11C9.3 41 8 39.7 8 38V15L13 6Z" stroke="#38bdf8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="#0f172a"/>
+        {/* Filled Blue Water */}
+        <path d="M9.5 18L10 37.5C10 38.3 10.7 39 11.5 39H20.5C21.3 39 22 38.3 22 37.5L22.5 18H9.5Z" fill="url(#bottleWaterGrad)"/>
+        {/* Water Level Line */}
+        <path d="M9.5 18C12.5 19.5 14.5 17 17.5 18C20.5 19 21.5 17.5 22.5 18" stroke="#38bdf8" strokeWidth="1.5" strokeLinecap="round"/>
+        {/* Bottle Shine Line */}
+        <path d="M11 16L12 34" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.6"/>
+        <defs>
+          <linearGradient id="bottleWaterGrad" x1="16" y1="18" x2="16" y2="39" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#06b6d4" />
+            <stop offset="1" stopColor="#0369a1" />
+          </linearGradient>
+        </defs>
+      </svg>
+    );
+  }
+}
+
 export default function WaterTrackerModal({
   onClose,
   waterTargetMl = 3500,
@@ -20,13 +73,13 @@ export default function WaterTrackerModal({
   // Exact Default Container Presets Requested by User:
   // 1. Small Glass (150 ml)
   // 2. Big Glass (300 ml)
-  // 3. Small Bottle (750 ml)
-  // 4. Big Bottle (1000 ml / 1L)
+  // 3. Small Bottle 750ml
+  // 4. Big Bottle 1L
   const defaultVessels = [
-    { id: 'small_glass', name: 'Small Glass', ml: 150, icon: '🫗' },
-    { id: 'big_glass', name: 'Big Glass', ml: 300, icon: '🫗' },
-    { id: 'small_bottle', name: 'Small Bottle', ml: 750, icon: '💧' },
-    { id: 'big_bottle', name: 'Big Bottle', ml: 1000, icon: '🍶' }
+    { id: 'small_glass', name: 'Small Glass', ml: 150, type: 'small_glass', size: 'sm' },
+    { id: 'big_glass', name: 'Big Glass', ml: 300, type: 'big_glass', size: 'big' },
+    { id: 'small_bottle', name: 'Small Bottle 750ml', ml: 750, type: 'small_bottle', size: 'sm' },
+    { id: 'big_bottle', name: 'Big Bottle 1L', ml: 1000, type: 'big_bottle', size: 'big' }
   ];
 
   const [vessels, setVessels] = useState(profile?.customVessels || defaultVessels);
@@ -189,7 +242,7 @@ export default function WaterTrackerModal({
               </div>
             </div>
 
-            {/* PERSONALIZED VESSEL PRESETS GRID */}
+            {/* PERSONALIZED WATER GLASS & BOTTLE PRESETS WITH VECTOR GRAPHICS */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
@@ -207,17 +260,11 @@ export default function WaterTrackerModal({
               {/* EDIT VESSEL DRAWER */}
               {showVesselEditor && (
                 <div className="p-3.5 rounded-2xl bg-slate-950 border border-cyan-500/40 space-y-2.5 animate-in fade-in duration-200">
-                  <div className="text-xs font-bold text-cyan-300">Customize Container Names, Symbols & Capacity</div>
+                  <div className="text-xs font-bold text-cyan-300">Customize Container Names & Capacity</div>
                   <div className="space-y-2 text-xs">
                     {vessels.map(v => (
                       <div key={v.id} className="p-2 rounded-xl bg-slate-900 border border-slate-800 flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={v.icon}
-                          onChange={(e) => handleVesselFieldChange(v.id, 'icon', e.target.value)}
-                          className="w-8 text-center p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-sm"
-                          placeholder="🫗"
-                        />
+                        <WaterVesselIcon type={v.type || v.id} size={v.size || 'sm'} />
                         <input
                           type="text"
                           value={v.name}
@@ -248,21 +295,22 @@ export default function WaterTrackerModal({
                 </div>
               )}
 
-              {/* PERSONALIZED QUICK LOG BUTTONS (WITH SIZED ICONS) */}
+              {/* PERSONALIZED QUICK LOG BUTTONS (WITH HIGH-RES VECTOR GRAPHICS & WATER FILL) */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {vessels.map((item) => (
                   <button
                     key={item.id}
                     type="button"
                     onClick={() => handleQuickLog(item.ml)}
-                    className="p-3 rounded-xl bg-slate-950 border border-slate-800 hover:border-cyan-500/50 transition flex flex-col items-center gap-1 active:scale-95"
+                    className="p-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-cyan-500/60 transition flex flex-col items-center justify-between gap-1.5 active:scale-95 min-h-[105px]"
                   >
-                    {/* Scaled Icon Sizes for Small vs Big Glass/Bottle */}
-                    <span className={item.id === 'big_glass' || item.id === 'big_bottle' ? 'text-3xl' : 'text-xl'}>
-                      {item.icon}
-                    </span>
-                    <span className="text-xs font-bold text-slate-200 truncate max-w-full">{item.name}</span>
-                    <span className="text-[10px] text-cyan-400 font-black">+{item.ml} ml</span>
+                    <div className="flex items-center justify-center h-11">
+                      <WaterVesselIcon type={item.type || item.id} size={item.size || (item.ml > 300 ? 'big' : 'sm')} />
+                    </div>
+                    <div className="text-center w-full">
+                      <span className="text-[11px] font-extrabold text-slate-200 block truncate leading-tight">{item.name}</span>
+                      <span className="text-[10px] text-cyan-400 font-black">+{item.ml} ml</span>
+                    </div>
                   </button>
                 ))}
               </div>
