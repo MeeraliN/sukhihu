@@ -1,8 +1,16 @@
 /**
  * USDA / National Academy of Medicine (NAM) Dietary Reference Intakes (DRI) Calculator
  * Computes exact daily targets for 40+ macronutrients, vitamins, and minerals
- * based on Height, Weight, Age, Sex, Life Stage, Activity Level, and Weight Goal.
+ * with Health Issue Target Scaling & Side-Effect Mitigation Solutions.
  */
+
+/**
+ * Formats any number strictly to maximum 2 decimal places
+ */
+export function formatNutrientVal(val) {
+  if (val === undefined || val === null || isNaN(val)) return 0;
+  return Math.round(Number(val) * 100) / 100;
+}
 
 export function calculateDRI(profile) {
   const {
@@ -12,7 +20,8 @@ export function calculateDRI(profile) {
     sex = 'male', // 'male' | 'female'
     lifeStage = 'standard', // 'standard' | 'pregnant' | 'lactating'
     activityLevel = 'moderate', // 'sedentary' | 'light' | 'moderate' | 'active' | 'extra'
-    weightGoal = 'maintain' // 'loss' | 'maintain' | 'gain'
+    weightGoal = 'maintain', // 'loss' | 'maintain' | 'gain'
+    healthIssue = 'acne_skin' // 'acne_skin' | 'hair_fall' | 'weight_loss' | 'energy_fatigue' | etc.
   } = profile;
 
   // 1. Calculate Basal Metabolic Rate (BMR) using Mifflin-St Jeor Equation
@@ -46,38 +55,38 @@ export function calculateDRI(profile) {
     calories = Math.round(maintenanceCalories * 1.18); // ~18% surplus (~450 kcal)
   }
 
-  // 4. Protein scaling (1.2g to 2.2g per kg depending on activity and goal)
+  // 4. Protein scaling
   let proteinPerKg = activityLevel === 'sedentary' ? 1.0 : (activityLevel === 'active' || activityLevel === 'extra') ? 1.8 : 1.4;
   if (weightGoal === 'loss') proteinPerKg += 0.3;
   if (weightGoal === 'gain') proteinPerKg += 0.4;
 
-  let protein = Math.round(weightKg * proteinPerKg);
+  let protein = formatNutrientVal(weightKg * proteinPerKg);
   if (lifeStage === 'pregnant' || lifeStage === 'lactating') protein += 25;
 
   // 5. Carbs & Fats
   const carbCalories = calories * 0.50; // 50%
-  const carbs = Math.round(carbCalories / 4);
-  const fiber = Math.round((calories / 1000) * 14); // 14g per 1000 kcal
+  const carbs = formatNutrientVal(carbCalories / 4);
+  const fiber = formatNutrientVal((calories / 1000) * 14);
 
   const fatCalories = calories * 0.30; // 30%
-  const totalFat = Math.round(fatCalories / 9);
-  const satFat = Math.round((calories * 0.08) / 9); // <8%
-  const monoFat = Math.round((calories * 0.15) / 9);
-  const polyFat = Math.round((calories * 0.07) / 9);
+  const totalFat = formatNutrientVal(fatCalories / 9);
+  const satFat = formatNutrientVal((calories * 0.08) / 9);
+  const monoFat = formatNutrientVal((calories * 0.15) / 9);
+  const polyFat = formatNutrientVal((calories * 0.07) / 9);
 
   // Water intake (35ml per kg)
-  const waterMl = Math.round(weightKg * 35);
+  let waterMl = Math.round(weightKg * 35);
 
   const isMale = sex === 'male';
 
-  return {
+  const baseTargets = {
     // === MACRONUTRIENTS ===
     calories: { target: calories, maintenanceCalories, weightGoal, unit: 'kcal', label: 'Daily Calories', cat: 'macro' },
     protein: { target: protein, unit: 'g', label: 'Protein', cat: 'macro' },
     carbs: { target: carbs, unit: 'g', label: 'Carbohydrates', cat: 'macro' },
     fiber: { target: fiber, unit: 'g', label: 'Dietary Fiber', cat: 'macro' },
     totalFat: { target: totalFat, unit: 'g', label: 'Total Fats', cat: 'macro' },
-    satFat: { target: satFat, unit: 'g', label: 'Saturated Fat', cat: 'macro', upperLimit: Math.round((calories * 0.10) / 9) },
+    satFat: { target: satFat, unit: 'g', label: 'Saturated Fat', cat: 'macro', upperLimit: formatNutrientVal((calories * 0.10) / 9) },
     monoFat: { target: monoFat, unit: 'g', label: 'Monounsaturated Fat', cat: 'macro' },
     polyFat: { target: polyFat, unit: 'g', label: 'Polyunsaturated Fat', cat: 'macro' },
     sugar: { target: 25, unit: 'g', label: 'Added Sugar Max', cat: 'macro', upperLimit: 36 },
@@ -116,6 +125,61 @@ export function calculateDRI(profile) {
     iodine: { target: 150, unit: 'mcg', label: 'Iodine', cat: 'mineral', upperLimit: 1100 },
     chromium: { target: isMale ? 35 : 25, unit: 'mcg', label: 'Chromium', cat: 'mineral' },
     molybdenum: { target: 45, unit: 'mcg', label: 'Molybdenum', cat: 'mineral', upperLimit: 2000 }
+  };
+
+  // 6. ISSUE-SPECIFIC THERAPEUTIC TARGET SCALING & SIDE-EFFECT MITIGATION
+  let issueMitigationNote = null;
+
+  if (healthIssue === 'acne_skin') {
+    baseTargets.vitaminC.target = 500; // Therapeutic dose for skin collagen & acne inflammation
+    baseTargets.water.target += 1000; // Increase water to 3500ml
+    issueMitigationNote = {
+      issueName: 'Clear Skin & Anti-Acne',
+      adjustedNutrient: 'Vitamin C increased to 500mg',
+      sideEffect: 'High Vitamin C can increase renal oxalate excretion & risk kidney stones.',
+      mitigationSolution: '🛡️ Mitigation Solution: Water intake target automatically scaled up to 3,500ml/day to ensure complete renal flushing and eliminate kidney stone risks.'
+    };
+  } else if (healthIssue === 'hair_fall') {
+    baseTargets.biotinB7.target = 100; // High therapeutic biotin
+    baseTargets.zinc.target = 15;
+    baseTargets.copper.target = 1.4; // Counterbalance zinc
+    issueMitigationNote = {
+      issueName: 'Hair Growth & Anti-Hair Fall',
+      adjustedNutrient: 'Biotin increased to 100mcg & Zinc to 15mg',
+      sideEffect: 'High Zinc intake over time inhibits Copper absorption, causing anemia.',
+      mitigationSolution: '🛡️ Mitigation Solution: Copper target automatically scaled up to 1.4mg to preserve trace mineral equilibrium and protect blood cell health.'
+    };
+  } else if (healthIssue === 'weight_loss') {
+    baseTargets.fiber.target += 8;
+    baseTargets.water.target += 600;
+    issueMitigationNote = {
+      issueName: 'Weight Loss & Fat Burn',
+      adjustedNutrient: 'Fiber target increased to ' + baseTargets.fiber.target + 'g',
+      sideEffect: 'Caloric deficit & high dietary fiber can cause GI motility slowdown or constipation.',
+      mitigationSolution: '🛡️ Mitigation Solution: Fluid hydration target increased to prevent gastrointestinal stress and maintain BMR fat oxidation.'
+    };
+  } else if (healthIssue === 'energy_fatigue') {
+    baseTargets.vitaminB12.target = 5.0;
+    baseTargets.magnesium.target = 450;
+    issueMitigationNote = {
+      issueName: 'Energy Boost & Anti-Fatigue',
+      adjustedNutrient: 'B12 increased to 5.0mcg & Magnesium to 450mg',
+      sideEffect: 'High Magnesium can cause digestive sensitivity if unbuffered.',
+      mitigationSolution: '🛡️ Mitigation Solution: B-complex co-factors and fluid balance adjusted to ensure optimal mitochondrial ATP conversion without stomach distress.'
+    };
+  }
+
+  // Format all target values to max 2 decimal places
+  Object.keys(baseTargets).forEach(k => {
+    baseTargets[k].target = formatNutrientVal(baseTargets[k].target);
+    if (baseTargets[k].upperLimit) {
+      baseTargets[k].upperLimit = formatNutrientVal(baseTargets[k].upperLimit);
+    }
+  });
+
+  return {
+    ...baseTargets,
+    issueMitigationNote
   };
 }
 

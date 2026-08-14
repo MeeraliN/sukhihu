@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { getNutrientStatus } from '../services/driCalculator';
-import { Sparkles, Info, ShieldAlert, CheckCircle2, Flame, Droplets, Leaf, Scale, Target } from 'lucide-react';
+import { getNutrientStatus, formatNutrientVal } from '../services/driCalculator';
+import { Sparkles, Info, ShieldAlert, CheckCircle2, Flame, ShieldCheck, AlertTriangle } from 'lucide-react';
 
 export default function NutrientDashboard({ currentIntake, driTargets, profile, onSearchFood }) {
   const [activeTab, setActiveTab] = useState('vitamins'); // 'vitamins' | 'minerals' | 'macros'
@@ -9,8 +9,8 @@ export default function NutrientDashboard({ currentIntake, driTargets, profile, 
   if (!driTargets) return null;
 
   const targetCalories = driTargets.calories?.target || 2000;
-  const loggedCalories = currentIntake.calories || 0;
-  const remainingCalories = Math.max(0, targetCalories - loggedCalories);
+  const loggedCalories = formatNutrientVal(currentIntake.calories || 0);
+  const remainingCalories = formatNutrientVal(Math.max(0, targetCalories - loggedCalories));
   const caloriePct = Math.min(100, Math.round((loggedCalories / targetCalories) * 100));
 
   // Filter keys by category
@@ -33,16 +33,26 @@ export default function NutrientDashboard({ currentIntake, driTargets, profile, 
   });
   const overallScore = Math.round(totalScoreRatioSum / allKeys.length);
 
+  // COLOR-TRACEABLE HEADER CARD STATUS
+  // < 50% = RED, 50-85% = YELLOW, >= 85% = GREEN
+  const headerTheme = overallScore < 50
+    ? { color: 'red', text: 'text-red-400', border: 'border-red-500/50', bg: 'from-red-950/60 via-slate-900 to-slate-900', ring: 'text-red-500' }
+    : overallScore < 85
+    ? { color: 'yellow', text: 'text-amber-400', border: 'border-amber-500/50', bg: 'from-amber-950/60 via-slate-900 to-slate-900', ring: 'text-amber-400' }
+    : { color: 'green', text: 'text-emerald-400', border: 'border-emerald-500/50', bg: 'from-emerald-950/60 via-slate-900 to-slate-900', ring: 'text-emerald-400' };
+
+  const mitigationNote = driTargets.issueMitigationNote;
+
   return (
     <div className="space-y-4 pb-20">
       
-      {/* Overview Daily Score Card */}
-      <div className="glass-card p-4 rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900/90 to-emerald-950/30 relative overflow-hidden">
+      {/* COLOR-TRACEABLE OVERVIEW DAILY SCORE CARD */}
+      <div className={`glass-card p-4 rounded-2xl border ${headerTheme.border} bg-gradient-to-br ${headerTheme.bg} relative overflow-hidden transition-all duration-500`}>
         <div className="flex items-center justify-between">
           <div>
-            <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-semibold mb-1">
+            <div className={`flex items-center gap-1.5 text-xs font-bold mb-1 ${headerTheme.text}`}>
               <Sparkles className="w-3.5 h-3.5" />
-              <span>DAILY DRI NUTRIENT COVERAGE</span>
+              <span>COLOR-TRACEABLE NUTRIENT COVERAGE</span>
             </div>
             <h2 className="text-2xl font-black text-slate-100">{overallScore}% Achieved</h2>
             <p className="text-xs text-slate-400 mt-0.5">
@@ -61,7 +71,7 @@ export default function NutrientDashboard({ currentIntake, driTargets, profile, 
                 d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
               />
               <path
-                className="text-emerald-400 transition-all duration-500"
+                className={`${headerTheme.ring} transition-all duration-500`}
                 strokeDasharray={`${overallScore}, 100`}
                 strokeWidth="3.5"
                 strokeLinecap="round"
@@ -74,6 +84,27 @@ export default function NutrientDashboard({ currentIntake, driTargets, profile, 
           </div>
         </div>
       </div>
+
+      {/* ISSUE TARGET ADJUSTMENT & SIDE EFFECT MITIGATION BANNER */}
+      {mitigationNote && (
+        <div className="p-4 rounded-2xl bg-gradient-to-r from-teal-950/70 via-slate-900 to-slate-900 border border-teal-500/40 space-y-2">
+          <div className="flex items-center gap-2 text-teal-300 text-xs font-extrabold">
+            <ShieldCheck className="w-4 h-4 text-teal-400" />
+            <span>Health Focus & Side-Effect Mitigation Solution</span>
+          </div>
+          <p className="text-xs text-slate-300 font-semibold">
+            {mitigationNote.issueName}: <span className="text-amber-400">{mitigationNote.adjustedNutrient}</span>
+          </p>
+          <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 text-[11px] text-slate-300 space-y-1">
+            <div className="text-rose-400 font-bold flex items-center gap-1">
+              <AlertTriangle className="w-3.5 h-3.5" /> Risk / Side Effect: {mitigationNote.sideEffect}
+            </div>
+            <div className="text-teal-300 font-medium">
+              {mitigationNote.mitigationSolution}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* AUTOMATIC CALORIE CALCULATOR CARD */}
       <div className="glass-card p-4 rounded-2xl border border-amber-500/30 bg-gradient-to-br from-slate-900 via-amber-950/20 to-slate-900 space-y-3">
@@ -157,7 +188,7 @@ export default function NutrientDashboard({ currentIntake, driTargets, profile, 
       <div className="space-y-2.5">
         {nutrientKeys.map(key => {
           const targetObj = driTargets[key];
-          const loggedValue = currentIntake[key] || 0;
+          const loggedValue = formatNutrientVal(currentIntake[key] || 0);
           const status = getNutrientStatus(loggedValue, targetObj);
           const pct = Math.min(100, Math.round((loggedValue / targetObj.target) * 100));
 
@@ -174,7 +205,7 @@ export default function NutrientDashboard({ currentIntake, driTargets, profile, 
                     <Info className="w-3.5 h-3.5 text-slate-500" />
                   </div>
                   <div className="text-xs text-slate-400">
-                    <span className="font-semibold text-slate-200">{loggedValue}</span> / {targetObj.target} {targetObj.unit}
+                    <span className="font-semibold text-slate-200">{loggedValue}</span> / {formatNutrientVal(targetObj.target)} {targetObj.unit}
                   </div>
                 </div>
 
@@ -228,13 +259,13 @@ export default function NutrientDashboard({ currentIntake, driTargets, profile, 
                 <div>
                   <div className="text-xs text-slate-400">Logged Today</div>
                   <div className="text-lg font-bold text-emerald-400">
-                    {selectedNutrient.loggedValue} {selectedNutrient.targetObj.unit}
+                    {formatNutrientVal(selectedNutrient.loggedValue)} {selectedNutrient.targetObj.unit}
                   </div>
                 </div>
                 <div className="text-right">
                   <div className="text-xs text-slate-400">Daily Target (RDA)</div>
                   <div className="text-lg font-bold text-slate-200">
-                    {selectedNutrient.targetObj.target} {selectedNutrient.targetObj.unit}
+                    {formatNutrientVal(selectedNutrient.targetObj.target)} {selectedNutrient.targetObj.unit}
                   </div>
                 </div>
               </div>
@@ -242,7 +273,7 @@ export default function NutrientDashboard({ currentIntake, driTargets, profile, 
               {selectedNutrient.targetObj.upperLimit && (
                 <div className="p-3 rounded-xl bg-red-950/30 border border-red-500/30 text-xs text-red-300 flex items-center gap-2">
                   <ShieldAlert className="w-4 h-4 text-red-400 shrink-0" />
-                  <span>Tolerable Upper Limit (UL): {selectedNutrient.targetObj.upperLimit} {selectedNutrient.targetObj.unit}</span>
+                  <span>Tolerable Upper Limit (UL): {formatNutrientVal(selectedNutrient.targetObj.upperLimit)} {selectedNutrient.targetObj.unit}</span>
                 </div>
               )}
 
