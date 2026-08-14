@@ -1,20 +1,28 @@
 import React, { useState } from 'react';
-import { User, Activity, CheckCircle2, Globe, Crown, TrendingDown, Scale, TrendingUp } from 'lucide-react';
-import { CURRENCIES, getActiveCurrency, setActiveCurrency } from '../services/subscriptionService';
 import { calculateDRI } from '../services/driCalculator';
+import { User, Scale, Flame, ShieldCheck, Crown, Clock, RefreshCw, X, Heart, Droplets } from 'lucide-react';
 
 export default function ProfileModal({ onClose, profile, onUpdateProfile, trialStatus, onOpenPaywall }) {
-  const [heightCm, setHeightCm] = useState(profile.heightCm);
-  const [weightKg, setWeightKg] = useState(profile.weightKg);
-  const [age, setAge] = useState(profile.age);
-  const [sex, setSex] = useState(profile.sex);
-  const [activityLevel, setActivityLevel] = useState(profile.activityLevel);
-  const [dietaryPreference, setDietaryPreference] = useState(profile.dietaryPreference);
+  const [heightCm, setHeightCm] = useState(profile.heightCm || 175);
+  const [weightKg, setWeightKg] = useState(profile.weightKg || 70);
+  const [age, setAge] = useState(profile.age || 28);
+  const [sex, setSex] = useState(profile.sex || 'male');
+  const [activityLevel, setActivityLevel] = useState(profile.activityLevel || 'moderate');
+  const [dietaryPreference, setDietaryPreference] = useState(profile.dietaryPreference || 'veg');
   const [weightGoal, setWeightGoal] = useState(profile.weightGoal || 'maintain');
-  const [selectedCurrency, setSelectedCurrency] = useState(getActiveCurrency());
+  const [healthIssue, setHealthIssue] = useState(profile.healthIssue || 'acne_skin');
+  const [climate, setClimate] = useState(profile.climate || 'standard');
+  const [medicalTreatment, setMedicalTreatment] = useState(profile.medicalTreatment || 'none');
+
+  const [wakeTime, setWakeTime] = useState(profile.routine?.wakeTime || '07:00');
+  const [breakfastTime, setBreakfastTime] = useState(profile.routine?.breakfastTime || '08:30');
+  const [lunchTime, setLunchTime] = useState(profile.routine?.lunchTime || '13:30');
+  const [dinnerTime, setDinnerTime] = useState(profile.routine?.dinnerTime || '20:30');
+  const [bedTime, setBedTime] = useState(profile.routine?.bedTime || '22:30');
 
   const handleSave = () => {
     const updatedProfile = {
+      ...profile,
       heightCm: Number(heightCm),
       weightKg: Number(weightKg),
       age: Number(age),
@@ -22,7 +30,16 @@ export default function ProfileModal({ onClose, profile, onUpdateProfile, trialS
       activityLevel,
       dietaryPreference,
       weightGoal,
-      lifeStage: profile.lifeStage || 'standard'
+      healthIssue,
+      climate,
+      medicalTreatment,
+      routine: {
+        wakeTime,
+        breakfastTime,
+        lunchTime,
+        dinnerTime,
+        bedTime
+      }
     };
 
     const newDRI = calculateDRI(updatedProfile);
@@ -30,198 +47,206 @@ export default function ProfileModal({ onClose, profile, onUpdateProfile, trialS
     onClose();
   };
 
-  const handleCurrencyChange = (code) => {
-    setActiveCurrency(code);
-    const curr = CURRENCIES.find(c => c.code === code);
-    if (curr) setSelectedCurrency(curr);
-  };
-
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-end sm:items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-800 w-full max-w-md h-[90vh] rounded-3xl p-5 flex flex-col justify-between overflow-y-auto animate-in fade-in slide-in-from-bottom-6 duration-200">
+    <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-end sm:items-center justify-center p-4">
+      <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-3xl p-5 space-y-4 animate-in fade-in slide-in-from-bottom-6 duration-200 max-h-[90vh] overflow-y-auto scrollbar-none">
         
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-800 pb-3">
           <div className="flex items-center gap-2">
             <User className="w-5 h-5 text-emerald-400" />
-            <h3 className="font-bold text-slate-100 text-base">Edit Personal Profile</h3>
+            <h3 className="font-extrabold text-lg text-slate-100">Profile & Routine Settings</h3>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="w-7 h-7 rounded-full bg-slate-800 text-slate-400 font-bold text-xs"
+            className="w-8 h-8 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-bold"
           >
-            ✕
+            <X className="w-4 h-4" />
           </button>
         </div>
 
+        {/* Subscription Status Card */}
+        <div
+          onClick={onOpenPaywall}
+          className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/10 to-amber-600/10 border border-amber-500/30 flex items-center justify-between cursor-pointer hover:border-amber-500/60 transition"
+        >
+          <div className="flex items-center gap-3">
+            {trialStatus?.isSubscribed ? (
+              <Crown className="w-5 h-5 text-amber-400 fill-amber-400" />
+            ) : (
+              <Clock className="w-5 h-5 text-amber-400 animate-pulse" />
+            )}
+            <div>
+              <div className="text-xs font-bold text-amber-300">
+                {trialStatus?.isSubscribed ? 'PRO Membership Active' : '1-Day Free Trial'}
+              </div>
+              <div className="text-[10px] text-amber-400/80">
+                {trialStatus?.isSubscribed ? 'Unlimited Lifetime Access' : `${trialStatus?.formattedTimeLeft} trial remaining`}
+              </div>
+            </div>
+          </div>
+          <span className="text-[10px] font-black px-2.5 py-1 rounded bg-amber-500 text-slate-950 uppercase">
+            {trialStatus?.isSubscribed ? 'Active' : 'Upgrade'}
+          </span>
+        </div>
+
         {/* Form Fields */}
-        <div className="space-y-4 my-3 text-xs">
+        <div className="space-y-3">
           
-          {/* Weight Goal Selector */}
-          <div>
-            <label className="font-semibold text-amber-400 mb-1 block">Weight Goal Strategy</label>
-            <div className="grid grid-cols-3 gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
-              {[
-                { id: 'loss', label: '📉 Loss' },
-                { id: 'maintain', label: '⚖️ Maintain' },
-                { id: 'gain', label: '📈 Gain' }
-              ].map(g => (
-                <button
-                  key={g.id}
-                  type="button"
-                  onClick={() => setWeightGoal(g.id)}
-                  className={`py-2 rounded-lg font-bold text-center transition ${
-                    weightGoal === g.id
-                      ? 'bg-amber-500 text-slate-950 font-black shadow'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  {g.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Sex Selection */}
-          <div>
-            <label className="font-semibold text-slate-300 mb-1 block">Biological Sex</label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setSex('male')}
-                className={`py-2 rounded-xl border font-bold transition ${
-                  sex === 'male' ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400' : 'bg-slate-950 border-slate-800 text-slate-400'
-                }`}
-              >
-                Male
-              </button>
-              <button
-                type="button"
-                onClick={() => setSex('female')}
-                className={`py-2 rounded-xl border font-bold transition ${
-                  sex === 'female' ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400' : 'bg-slate-950 border-slate-800 text-slate-400'
-                }`}
-              >
-                Female
-              </button>
-            </div>
-          </div>
-
-          {/* Height & Weight */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="font-semibold text-slate-300 mb-1 block">Height (cm)</label>
+              <label className="text-xs text-slate-400 font-semibold block mb-1">Height (cm)</label>
               <input
                 type="number"
                 value={heightCm}
                 onChange={(e) => setHeightCm(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 font-bold focus:outline-none focus:border-emerald-500"
+                className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-slate-100"
               />
             </div>
             <div>
-              <label className="font-semibold text-slate-300 mb-1 block">Weight (kg)</label>
+              <label className="text-xs text-slate-400 font-semibold block mb-1">Weight (kg)</label>
               <input
                 type="number"
                 value={weightKg}
                 onChange={(e) => setWeightKg(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 font-bold focus:outline-none focus:border-emerald-500"
+                className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-slate-100"
               />
             </div>
           </div>
 
-          {/* Age */}
           <div>
-            <label className="font-semibold text-slate-300 mb-1 block">Age (years)</label>
-            <input
-              type="number"
-              value={age}
-              onChange={(e) => setAge(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 font-bold focus:outline-none focus:border-emerald-500"
-            />
-          </div>
-
-          {/* Strict Dietary Filter */}
-          <div>
-            <label className="font-semibold text-slate-300 mb-1 block">Dietary Preference Filter</label>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { id: 'veg', label: '🥦 Vegetarian' },
-                { id: 'vegan', label: '🌱 Vegan' },
-                { id: 'eggetarian', label: '🥚 Eggetarian' },
-                { id: 'non-veg', label: '🍗 Non-Vegetarian' }
-              ].map(d => (
-                <button
-                  key={d.id}
-                  type="button"
-                  onClick={() => setDietaryPreference(d.id)}
-                  className={`py-2 px-2 rounded-xl border font-bold text-left transition ${
-                    dietaryPreference === d.id
-                      ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400'
-                      : 'bg-slate-950 border-slate-800 text-slate-400'
-                  }`}
-                >
-                  {d.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Currency Settings */}
-          <div className="pt-2 border-t border-slate-800">
-            <label className="font-semibold text-slate-300 mb-1 flex items-center gap-1.5">
-              <Globe className="w-3.5 h-3.5 text-emerald-400" /> Preferred App Currency
-            </label>
+            <label className="text-xs text-slate-400 font-semibold block mb-1">Dietary Preference</label>
             <select
-              value={selectedCurrency.code}
-              onChange={(e) => handleCurrencyChange(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-amber-400 font-bold focus:outline-none"
+              value={dietaryPreference}
+              onChange={(e) => setDietaryPreference(e.target.value)}
+              className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-emerald-400"
             >
-              {CURRENCIES.map((c) => (
-                <option key={c.code} value={c.code}>
-                  {c.symbol}20 {c.code} ({c.name})
-                </option>
-              ))}
+              <option value="veg">🥦 Strict Vegetarian (No Meat/Egg)</option>
+              <option value="vegan">🌱 Pure Vegan (Plant-Based Only)</option>
+              <option value="eggetarian">🥚 Eggetarian (Includes Eggs)</option>
+              <option value="non-veg">🍗 Non-Vegetarian</option>
             </select>
           </div>
 
-          {/* Subscription Banner */}
-          <div
-            onClick={onOpenPaywall}
-            className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/10 to-amber-600/10 border border-amber-500/30 flex items-center justify-between cursor-pointer"
-          >
-            <div>
-              <div className="font-bold text-amber-400 flex items-center gap-1">
-                <Crown className="w-4 h-4 fill-amber-400" />
-                <span>{trialStatus?.isSubscribed ? 'PRO Membership Active' : 'Trial Access Active'}</span>
+          <div>
+            <label className="text-xs text-slate-400 font-semibold block mb-1">Weight Strategy Mode</label>
+            <select
+              value={weightGoal}
+              onChange={(e) => setWeightGoal(e.target.value)}
+              className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-amber-400"
+            >
+              <option value="loss">📉 Weight Loss (Caloric Deficit ~20%)</option>
+              <option value="maintain">⚖️ Weight Maintenance</option>
+              <option value="gain">📈 Weight Gain / Muscle Building (~18% Surplus)</option>
+            </select>
+          </div>
+
+          {/* ROUTINE TIMINGS */}
+          <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+            <label className="text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5" /> Daily Routine Schedule Timings
+            </label>
+
+            <div className="grid grid-cols-2 gap-2 text-xs font-semibold">
+              <div>
+                <label className="text-[10px] text-slate-400">🌅 Wake Up Time</label>
+                <input
+                  type="time"
+                  value={wakeTime}
+                  onChange={(e) => setWakeTime(e.target.value)}
+                  className="w-full p-2 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-100"
+                />
               </div>
-              <p className="text-[10px] text-amber-300/70 mt-0.5">
-                {trialStatus?.isSubscribed ? 'Unlimited 24/7 scanning' : `Trial ends in ${trialStatus?.formattedTimeLeft}`}
-              </p>
+
+              <div>
+                <label className="text-[10px] text-slate-400">🍳 Breakfast Time</label>
+                <input
+                  type="time"
+                  value={breakfastTime}
+                  onChange={(e) => setBreakfastTime(e.target.value)}
+                  className="w-full p-2 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-100"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-slate-400">🥗 Lunch Time</label>
+                <input
+                  type="time"
+                  value={lunchTime}
+                  onChange={(e) => setLunchTime(e.target.value)}
+                  className="w-full p-2 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-100"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-slate-400">🍛 Dinner Time</label>
+                <input
+                  type="time"
+                  value={dinnerTime}
+                  onChange={(e) => setDinnerTime(e.target.value)}
+                  className="w-full p-2 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-100"
+                />
+              </div>
             </div>
-            <button className="px-3 py-1 bg-amber-500 text-slate-950 text-[10px] font-bold rounded-lg">
-              Manage
-            </button>
+
+            <div>
+              <label className="text-[10px] text-slate-400">🌙 Bed Time</label>
+              <input
+                type="time"
+                value={bedTime}
+                onChange={(e) => setBedTime(e.target.value)}
+                className="w-full p-2 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-100"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-xs text-slate-400 font-semibold block mb-1">Environment / Climate</label>
+              <select
+                value={climate}
+                onChange={(e) => setClimate(e.target.value)}
+                className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-slate-100"
+              >
+                <option value="standard">Standard / AC Environment</option>
+                <option value="hot">Hot & Humid (+500ml Water)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs text-slate-400 font-semibold block mb-1">Treatment / Condition</label>
+              <select
+                value={medicalTreatment}
+                onChange={(e) => setMedicalTreatment(e.target.value)}
+                className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-slate-100"
+              >
+                <option value="none">Standard Treatment</option>
+                <option value="renal_flush">Renal Flush (+1200ml)</option>
+                <option value="high_protein">High Protein (+800ml)</option>
+                <option value="sweat_heavy">Heavy Sweat (+1000ml)</option>
+              </select>
+            </div>
           </div>
 
         </div>
 
-        {/* Footer Actions */}
-        <div className="pt-3 border-t border-slate-800 flex gap-2">
+        {/* Action Buttons */}
+        <div className="pt-2 flex gap-2">
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-3 bg-slate-950 border border-slate-800 text-slate-400 font-semibold rounded-xl text-xs"
+            className="w-1/3 py-3 bg-slate-900 border border-slate-800 text-slate-300 font-bold rounded-xl text-xs"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={handleSave}
-            className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20"
+            className="w-2/3 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-1.5 transition shadow-md shadow-emerald-500/20"
           >
-            <CheckCircle2 className="w-4 h-4" />
-            <span>Save & Recalculate DRI</span>
+            <RefreshCw className="w-4 h-4" />
+            <span>Recalculate & Save</span>
           </button>
         </div>
 

@@ -1,391 +1,351 @@
 import React, { useState } from 'react';
-import { Activity, Heart, User, ChevronRight, CheckCircle2, Sparkles, TrendingDown, Scale, TrendingUp } from 'lucide-react';
 import { calculateDRI } from '../services/driCalculator';
+import { Sparkles, ArrowRight, User, Heart, Scale, Flame, ShieldAlert, Clock, Droplets } from 'lucide-react';
 
 export default function OnboardingWizard({ onComplete }) {
   const [step, setStep] = useState(1);
-  const [unitSystem, setUnitSystem] = useState('metric'); // 'metric' (cm/kg) or 'imperial' (ft-in/lbs)
 
-  // Profile Form State
-  const [heightCm, setHeightCm] = useState(172);
-  const [heightFt, setHeightFt] = useState(5);
-  const [heightIn, setHeightIn] = useState(8);
-
-  const [weightKg, setWeightKg] = useState(68);
-  const [weightLbs, setWeightLbs] = useState(150);
-
-  const [age, setAge] = useState(26);
+  // Step 1: Personal Info
+  const [age, setAge] = useState(28);
   const [sex, setSex] = useState('male');
+  const [heightCm, setHeightCm] = useState(175);
+  const [weightKg, setWeightKg] = useState(70);
   const [lifeStage, setLifeStage] = useState('standard');
   const [activityLevel, setActivityLevel] = useState('moderate');
-  const [dietaryPreference, setDietaryPreference] = useState('veg'); // 'veg' | 'vegan' | 'non-veg' | 'eggetarian'
+  const [dietaryPreference, setDietaryPreference] = useState('veg');
+
+  // Step 2: Weight Goal & Health Focus Target
   const [weightGoal, setWeightGoal] = useState('maintain'); // 'loss' | 'maintain' | 'gain'
+  const [healthIssue, setHealthIssue] = useState('acne_skin'); // 'acne_skin' | 'hair_fall' | 'weight_loss' | 'energy_fatigue'
+
+  // Step 3: Daily Routine Schedule Timings & Hydration Conditions
+  const [wakeTime, setWakeTime] = useState('07:00');
+  const [breakfastTime, setBreakfastTime] = useState('08:30');
+  const [lunchTime, setLunchTime] = useState('13:30');
+  const [dinnerTime, setDinnerTime] = useState('20:30');
+  const [bedTime, setBedTime] = useState('22:30');
+  const [climate, setClimate] = useState('standard'); // 'standard' | 'hot'
+  const [medicalTreatment, setMedicalTreatment] = useState('none'); // 'none' | 'renal_flush' | 'high_protein' | 'sweat_heavy'
 
   const handleFinish = () => {
-    // Calculate final metrics in metric
-    const finalHeight = unitSystem === 'metric' ? Number(heightCm) : Math.round((Number(heightFt) * 30.48) + (Number(heightIn) * 2.54));
-    const finalWeight = unitSystem === 'metric' ? Number(weightKg) : Math.round(Number(weightLbs) * 0.453592);
-
-    const profileData = {
-      heightCm: finalHeight,
-      weightKg: finalWeight,
+    const profile = {
       age: Number(age),
       sex,
+      heightCm: Number(heightCm),
+      weightKg: Number(weightKg),
       lifeStage,
       activityLevel,
       dietaryPreference,
-      weightGoal
+      weightGoal,
+      healthIssue,
+      climate,
+      medicalTreatment,
+      routine: {
+        wakeTime,
+        breakfastTime,
+        lunchTime,
+        dinnerTime,
+        bedTime
+      }
     };
 
-    const computedDRI = calculateDRI(profileData);
-    onComplete(profileData, computedDRI);
+    const dri = calculateDRI(profile);
+    onComplete(profile, dri);
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-xl flex flex-col justify-between p-5 max-w-md mx-auto overflow-y-auto">
-      {/* Top Header & Progress Dots */}
-      <div>
-        <div className="flex items-center justify-between pt-3 pb-6">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/30">
-              <Sparkles className="w-5 h-5 text-slate-950 font-bold" />
-            </div>
-            <div>
-              <h1 className="font-extrabold text-xl tracking-wide bg-gradient-to-r from-emerald-400 via-teal-200 to-emerald-100 bg-clip-text text-transparent">
-                sukhihu
-              </h1>
-              <p className="text-[10px] text-emerald-400/80 font-medium -mt-1">Be Happy & Healthy</p>
-            </div>
-          </div>
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-            Step {step} of 4
-          </span>
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-center p-4 max-w-md mx-auto">
+      
+      {/* Top Branding */}
+      <div className="text-center mb-6 space-y-2">
+        <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/30">
+          <Sparkles className="w-6 h-6 text-slate-950 stroke-[2.5]" />
         </div>
+        <h1 className="text-2xl font-black tracking-tight bg-gradient-to-r from-emerald-400 via-teal-200 to-emerald-100 bg-clip-text text-transparent">
+          Welcome to sukhihu
+        </h1>
+        <p className="text-xs text-slate-400 font-medium">
+          Personalized USDA Daily DRI Nutrition & Hydration Setup
+        </p>
+      </div>
 
-        {/* Step Progress Bar */}
-        <div className="w-full bg-slate-800/80 h-1.5 rounded-full overflow-hidden mb-6">
-          <div
-            className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full transition-all duration-300"
-            style={{ width: `${(step / 4) * 100}%` }}
-          />
-        </div>
+      {/* Progress Dots */}
+      <div className="flex justify-center gap-2 mb-6">
+        <span className={`w-8 h-1.5 rounded-full transition-all ${step >= 1 ? 'bg-emerald-400' : 'bg-slate-800'}`} />
+        <span className={`w-8 h-1.5 rounded-full transition-all ${step >= 2 ? 'bg-emerald-400' : 'bg-slate-800'}`} />
+        <span className={`w-8 h-1.5 rounded-full transition-all ${step >= 3 ? 'bg-emerald-400' : 'bg-slate-800'}`} />
+      </div>
 
-        {/* STEP 1: Body Metrics */}
-        {step === 1 && (
-          <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-300">
+      {/* STEP 1: PERSONAL BIOMETRICS */}
+      {step === 1 && (
+        <div className="glass-card p-5 rounded-3xl border border-slate-800 space-y-4 animate-in fade-in duration-300">
+          <h2 className="text-sm font-bold text-slate-200 uppercase tracking-wider border-b border-slate-800 pb-2">
+            Step 1 of 3: Biometrics & Activity
+          </h2>
+
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <h2 className="text-xl font-bold text-slate-100">Let's setup your profile</h2>
-              <p className="text-xs text-slate-400 mt-1">
-                We calculate official USDA daily recommendations tailored to your body.
-              </p>
-            </div>
-
-            {/* Metric / Imperial Selector */}
-            <div className="flex bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs font-semibold">
-              <button
-                type="button"
-                onClick={() => setUnitSystem('metric')}
-                className={`flex-1 py-2 rounded-lg transition ${unitSystem === 'metric' ? 'bg-emerald-500 text-slate-950 font-bold shadow' : 'text-slate-400'}`}
+              <label className="text-xs text-slate-400 font-semibold block mb-1">Biological Sex</label>
+              <select
+                value={sex}
+                onChange={(e) => setSex(e.target.value)}
+                className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-slate-100"
               >
-                Metric (cm / kg)
-              </button>
-              <button
-                type="button"
-                onClick={() => setUnitSystem('imperial')}
-                className={`flex-1 py-2 rounded-lg transition ${unitSystem === 'imperial' ? 'bg-emerald-500 text-slate-950 font-bold shadow' : 'text-slate-400'}`}
-              >
-                Imperial (ft / lbs)
-              </button>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+              </select>
             </div>
 
-            {/* Sex Selection */}
             <div>
-              <label className="text-xs font-semibold text-slate-300 mb-2 block">Biological Sex</label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setSex('male')}
-                  className={`p-3 rounded-xl border text-sm font-semibold flex items-center justify-center gap-2 transition ${
-                    sex === 'male' ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400' : 'bg-slate-900 border-slate-800 text-slate-400'
-                  }`}
-                >
-                  <User className="w-4 h-4" /> Male
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSex('female')}
-                  className={`p-3 rounded-xl border text-sm font-semibold flex items-center justify-center gap-2 transition ${
-                    sex === 'female' ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400' : 'bg-slate-900 border-slate-800 text-slate-400'
-                  }`}
-                >
-                  <User className="w-4 h-4" /> Female
-                </button>
-              </div>
-            </div>
-
-            {/* Height Input */}
-            <div>
-              <label className="text-xs font-semibold text-slate-300 mb-1 block">Height</label>
-              {unitSystem === 'metric' ? (
-                <div className="relative">
-                  <input
-                    type="number"
-                    value={heightCm}
-                    onChange={(e) => setHeightCm(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 font-semibold focus:outline-none focus:border-emerald-500"
-                  />
-                  <span className="absolute right-4 top-3.5 text-xs text-slate-500 font-medium">cm</span>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="relative">
-                    <input
-                      type="number"
-                      value={heightFt}
-                      onChange={(e) => setHeightFt(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 font-semibold focus:outline-none focus:border-emerald-500"
-                    />
-                    <span className="absolute right-4 top-3.5 text-xs text-slate-500 font-medium">ft</span>
-                  </div>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      value={heightIn}
-                      onChange={(e) => setHeightIn(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 font-semibold focus:outline-none focus:border-emerald-500"
-                    />
-                    <span className="absolute right-4 top-3.5 text-xs text-slate-500 font-medium">in</span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Weight Input */}
-            <div>
-              <label className="text-xs font-semibold text-slate-300 mb-1 block">Weight</label>
-              <div className="relative">
-                {unitSystem === 'metric' ? (
-                  <input
-                    type="number"
-                    value={weightKg}
-                    onChange={(e) => setWeightKg(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 font-semibold focus:outline-none focus:border-emerald-500"
-                  />
-                ) : (
-                  <input
-                    type="number"
-                    value={weightLbs}
-                    onChange={(e) => setWeightLbs(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 font-semibold focus:outline-none focus:border-emerald-500"
-                  />
-                )}
-                <span className="absolute right-4 top-3.5 text-xs text-slate-500 font-medium">
-                  {unitSystem === 'metric' ? 'kg' : 'lbs'}
-                </span>
-              </div>
-            </div>
-
-            {/* Age Input */}
-            <div>
-              <label className="text-xs font-semibold text-slate-300 mb-1 block">Age (years)</label>
+              <label className="text-xs text-slate-400 font-semibold block mb-1">Age (Years)</label>
               <input
                 type="number"
                 value={age}
                 onChange={(e) => setAge(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 font-semibold focus:outline-none focus:border-emerald-500"
+                className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-slate-100"
               />
             </div>
           </div>
-        )}
 
-        {/* STEP 2: Weight Goal Selection */}
-        {step === 2 && (
-          <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <h2 className="text-xl font-bold text-slate-100">Your Weight Goal</h2>
-              <p className="text-xs text-slate-400 mt-1">
-                Food recommendations will prioritize maximum nutrient density based on your calorie strategy.
-              </p>
+              <label className="text-xs text-slate-400 font-semibold block mb-1">Height (cm)</label>
+              <input
+                type="number"
+                value={heightCm}
+                onChange={(e) => setHeightCm(e.target.value)}
+                className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-slate-100"
+              />
             </div>
 
-            <div className="space-y-3">
+            <div>
+              <label className="text-xs text-slate-400 font-semibold block mb-1">Weight (kg)</label>
+              <input
+                type="number"
+                value={weightKg}
+                onChange={(e) => setWeightKg(e.target.value)}
+                className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-slate-100"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs text-slate-400 font-semibold block mb-1">Dietary Preference</label>
+            <select
+              value={dietaryPreference}
+              onChange={(e) => setDietaryPreference(e.target.value)}
+              className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-emerald-400"
+            >
+              <option value="veg">🥦 Strict Vegetarian (No Meat/Egg)</option>
+              <option value="vegan">🌱 Pure Vegan (Plant-Based Only)</option>
+              <option value="eggetarian">🥚 Eggetarian (Includes Eggs)</option>
+              <option value="non-veg">🍗 Non-Vegetarian</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="text-xs text-slate-400 font-semibold block mb-1">Daily Physical Activity</label>
+            <select
+              value={activityLevel}
+              onChange={(e) => setActivityLevel(e.target.value)}
+              className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-slate-100"
+            >
+              <option value="sedentary">Desk Job / Sedentary (1.2x)</option>
+              <option value="light">Light Workout 1-3 days/wk (1.375x)</option>
+              <option value="moderate">Moderate Exercise 3-5 days/wk (1.55x)</option>
+              <option value="active">Heavy Training 6-7 days/wk (1.725x)</option>
+            </select>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setStep(2)}
+            className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-2 transition"
+          >
+            <span>Next: Goals & Issues</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* STEP 2: WEIGHT GOALS & HEALTH FOCUS */}
+      {step === 2 && (
+        <div className="glass-card p-5 rounded-3xl border border-slate-800 space-y-4 animate-in fade-in duration-300">
+          <h2 className="text-sm font-bold text-slate-200 uppercase tracking-wider border-b border-slate-800 pb-2">
+            Step 2 of 3: Weight Strategy & Target Issue
+          </h2>
+
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-slate-300">Weight Strategy Mode</label>
+            <div className="grid grid-cols-3 gap-2 text-xs font-bold">
               {[
-                {
-                  id: 'loss',
-                  title: '📉 Weight Loss (Caloric Deficit)',
-                  icon: TrendingDown,
-                  color: 'text-amber-400 border-amber-500/40 bg-amber-500/10',
-                  desc: 'Prioritizes maximum vitamins & minerals with the lowest possible calories (~20% deficit).'
-                },
-                {
-                  id: 'maintain',
-                  title: '⚖️ Weight Maintenance',
-                  icon: Scale,
-                  color: 'text-emerald-400 border-emerald-500/40 bg-emerald-500/10',
-                  desc: 'Maintains healthy energy balance & optimal nutrient density baseline.'
-                },
-                {
-                  id: 'gain',
-                  title: '📈 Weight Gain / Muscle Growth',
-                  icon: TrendingUp,
-                  color: 'text-teal-400 border-teal-500/40 bg-teal-500/10',
-                  desc: 'Prioritizes nutrient-rich, calorie-dense foods for clean surplus fuel (~18% surplus).'
-                }
-              ].map((goal) => (
-                <div
-                  key={goal.id}
-                  onClick={() => setWeightGoal(goal.id)}
-                  className={`p-4 rounded-xl border cursor-pointer transition flex items-start gap-3 ${
-                    weightGoal === goal.id
-                      ? 'bg-emerald-500/15 border-emerald-500 text-slate-100 shadow-md shadow-emerald-500/10'
-                      : 'bg-slate-900 border-slate-800 text-slate-400'
+                { id: 'loss', label: '📉 Weight Loss' },
+                { id: 'maintain', label: '⚖️ Maintain' },
+                { id: 'gain', label: '📈 Weight Gain' }
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setWeightGoal(item.id)}
+                  className={`p-2.5 rounded-xl border transition text-center ${
+                    weightGoal === item.id
+                      ? 'bg-emerald-500 text-slate-950 font-black border-emerald-400'
+                      : 'bg-slate-950 border-slate-800 text-slate-400'
                   }`}
                 >
-                  <div className="flex-1">
-                    <div className="text-sm font-bold text-slate-200">{goal.title}</div>
-                    <div className="text-xs text-slate-400 mt-0.5">{goal.desc}</div>
-                  </div>
-                  {weightGoal === goal.id && <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />}
-                </div>
+                  {item.label}
+                </button>
               ))}
             </div>
           </div>
-        )}
 
-        {/* STEP 3: Activity & Life Stage */}
-        {step === 3 && (
-          <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <div>
-              <h2 className="text-xl font-bold text-slate-100">Activity & Energy</h2>
-              <p className="text-xs text-slate-400 mt-1">
-                Help us fine-tune your caloric BMR and mineral loss rates.
-              </p>
-            </div>
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-slate-300">Health Focus / Target Issue</label>
+            <select
+              value={healthIssue}
+              onChange={(e) => setHealthIssue(e.target.value)}
+              className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-amber-400"
+            >
+              <option value="acne_skin">✨ Clear Skin & Anti-Acne (Vit C 500mg + 3.5L Water)</option>
+              <option value="hair_fall">💇 Hair Growth & Anti-Hair Fall (Biotin 100mcg + Zinc/Copper)</option>
+              <option value="weight_loss">📉 Weight Loss & Fat Burn (High Fiber + Fluid)</option>
+              <option value="energy_fatigue">⚡ Energy Boost & Anti-Fatigue (B12 & Magnesium)</option>
+            </select>
+          </div>
 
-            {/* Activity Level Selector */}
-            <div>
-              <label className="text-xs font-semibold text-slate-300 mb-2 block">Daily Activity Level</label>
-              <div className="space-y-2.5">
-                {[
-                  { id: 'sedentary', title: 'Sedentary', desc: 'Little to no exercise, desk job' },
-                  { id: 'light', title: 'Lightly Active', desc: 'Light exercise 1-3 days/week' },
-                  { id: 'moderate', title: 'Moderately Active', desc: 'Moderate exercise 3-5 days/week' },
-                  { id: 'active', title: 'Very Active', desc: 'Hard exercise 6-7 days/week' }
-                ].map((act) => (
-                  <div
-                    key={act.id}
-                    onClick={() => setActivityLevel(act.id)}
-                    className={`p-3.5 rounded-xl border cursor-pointer transition flex items-center justify-between ${
-                      activityLevel === act.id
-                        ? 'bg-emerald-500/15 border-emerald-500 text-slate-100'
-                        : 'bg-slate-900 border-slate-800 text-slate-400'
-                    }`}
-                  >
-                    <div>
-                      <div className="text-sm font-semibold text-slate-200">{act.title}</div>
-                      <div className="text-xs text-slate-400">{act.desc}</div>
-                    </div>
-                    {activityLevel === act.id && <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />}
-                  </div>
-                ))}
-              </div>
-            </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setStep(1)}
+              className="w-1/3 py-3 bg-slate-900 border border-slate-800 text-slate-300 font-bold rounded-xl text-xs"
+            >
+              Back
+            </button>
+            <button
+              type="button"
+              onClick={() => setStep(3)}
+              className="w-2/3 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-2 transition"
+            >
+              <span>Next: Routine & Hydration</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
-            {/* Life Stage if Female */}
-            {sex === 'female' && (
+      {/* STEP 3: DAILY ROUTINE TIMINGS & HYDRATION CONDITIONS */}
+      {step === 3 && (
+        <div className="glass-card p-5 rounded-3xl border border-slate-800 space-y-4 animate-in fade-in duration-300">
+          <h2 className="text-sm font-bold text-slate-200 uppercase tracking-wider border-b border-slate-800 pb-2">
+            Step 3 of 3: Personalized Routine & Hydration
+          </h2>
+
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5" /> Your Daily Schedule Timings
+            </label>
+
+            <div className="grid grid-cols-2 gap-2 text-xs font-semibold">
               <div>
-                <label className="text-xs font-semibold text-slate-300 mb-2 block">Special Life Stage</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { id: 'standard', label: 'Standard' },
-                    { id: 'pregnant', label: 'Pregnant' },
-                    { id: 'lactating', label: 'Lactating' }
-                  ].map((stg) => (
-                    <button
-                      key={stg.id}
-                      type="button"
-                      onClick={() => setLifeStage(stg.id)}
-                      className={`py-2.5 px-2 rounded-xl border text-xs font-semibold text-center transition ${
-                        lifeStage === stg.id
-                          ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400'
-                          : 'bg-slate-900 border-slate-800 text-slate-400'
-                      }`}
-                    >
-                      {stg.label}
-                    </button>
-                  ))}
-                </div>
+                <label className="text-[10px] text-slate-400">🌅 Wake Up Time</label>
+                <input
+                  type="time"
+                  value={wakeTime}
+                  onChange={(e) => setWakeTime(e.target.value)}
+                  className="w-full p-2 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-slate-100"
+                />
               </div>
-            )}
-          </div>
-        )}
 
-        {/* STEP 4: Strict Dietary Choice */}
-        {step === 4 && (
-          <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-300">
+              <div>
+                <label className="text-[10px] text-slate-400">🍳 Breakfast Time</label>
+                <input
+                  type="time"
+                  value={breakfastTime}
+                  onChange={(e) => setBreakfastTime(e.target.value)}
+                  className="w-full p-2 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-slate-100"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-slate-400">🥗 Lunch Time</label>
+                <input
+                  type="time"
+                  value={lunchTime}
+                  onChange={(e) => setLunchTime(e.target.value)}
+                  className="w-full p-2 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-slate-100"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-slate-400">🍛 Dinner Time</label>
+                <input
+                  type="time"
+                  value={dinnerTime}
+                  onChange={(e) => setDinnerTime(e.target.value)}
+                  className="w-full p-2 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-slate-100"
+                />
+              </div>
+            </div>
+
             <div>
-              <h2 className="text-xl font-bold text-slate-100">Dietary Preferences</h2>
-              <p className="text-xs text-slate-400 mt-1">
-                Food recommendations will be strictly filtered to match your chosen diet.
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {[
-                { id: 'veg', title: 'Vegetarian (Veg)', icon: '🥦', desc: 'Plant foods + dairy products (Paneer, Milk, Curd)' },
-                { id: 'vegan', title: 'Vegan (Strict Plant-Based)', icon: '🌱', desc: '100% Plant-based, zero animal products or dairy' },
-                { id: 'eggetarian', title: 'Eggetarian', icon: '🥚', desc: 'Vegetarian diet + Eggs included' },
-                { id: 'non-veg', title: 'Non-Vegetarian (Non-Veg)', icon: '🍗', desc: 'Includes Poultry, Seafood, Meat, Eggs, and Dairy' }
-              ].map((diet) => (
-                <div
-                  key={diet.id}
-                  onClick={() => setDietaryPreference(diet.id)}
-                  className={`p-4 rounded-xl border cursor-pointer transition flex items-start gap-3 ${
-                    dietaryPreference === diet.id
-                      ? 'bg-emerald-500/15 border-emerald-500 text-slate-100 shadow-md shadow-emerald-500/10'
-                      : 'bg-slate-900 border-slate-800 text-slate-400'
-                  }`}
-                >
-                  <span className="text-2xl">{diet.icon}</span>
-                  <div className="flex-1">
-                    <div className="text-sm font-bold text-slate-200">{diet.title}</div>
-                    <div className="text-xs text-slate-400 mt-0.5">{diet.desc}</div>
-                  </div>
-                  {dietaryPreference === diet.id && <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />}
-                </div>
-              ))}
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-slate-400 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>You can edit all these personal details anytime in your Profile screen.</span>
+              <label className="text-[10px] text-slate-400">🌙 Bed Time</label>
+              <input
+                type="time"
+                value={bedTime}
+                onChange={(e) => setBedTime(e.target.value)}
+                className="w-full p-2 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-slate-100"
+              />
             </div>
           </div>
-        )}
-      </div>
 
-      {/* Bottom Action Button */}
-      <div className="pt-4 pb-2">
-        {step < 4 ? (
-          <button
-            type="button"
-            onClick={() => setStep(step + 1)}
-            className="w-full py-3.5 px-4 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-bold rounded-xl shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2 transition active:scale-[0.98]"
-          >
-            <span>Continue</span>
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={handleFinish}
-            className="w-full py-3.5 px-4 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-bold rounded-xl shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-2 transition active:scale-[0.98]"
-          >
-            <CheckCircle2 className="w-5 h-5" />
-            <span>Generate Calorie-Efficient DRI Targets</span>
-          </button>
-        )}
-      </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-xs text-slate-400 font-semibold block mb-1">Environment / Climate</label>
+              <select
+                value={climate}
+                onChange={(e) => setClimate(e.target.value)}
+                className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-slate-100"
+              >
+                <option value="standard">Standard / AC Environment</option>
+                <option value="hot">Hot & Humid (+500ml Water)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs text-slate-400 font-semibold block mb-1">Treatment / Condition</label>
+              <select
+                value={medicalTreatment}
+                onChange={(e) => setMedicalTreatment(e.target.value)}
+                className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-slate-100"
+              >
+                <option value="none">Standard Treatment</option>
+                <option value="renal_flush">Renal Flush (+1200ml)</option>
+                <option value="high_protein">High Protein (+800ml)</option>
+                <option value="sweat_heavy">Heavy Sweat (+1000ml)</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-2">
+            <button
+              type="button"
+              onClick={() => setStep(2)}
+              className="w-1/3 py-3 bg-slate-900 border border-slate-800 text-slate-300 font-bold rounded-xl text-xs"
+            >
+              Back
+            </button>
+            <button
+              type="button"
+              onClick={handleFinish}
+              className="w-2/3 py-3 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-2 transition shadow-lg shadow-emerald-500/20"
+            >
+              <span>Complete Setup & Start</span>
+              <Sparkles className="w-4 h-4 stroke-[2.5]" />
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

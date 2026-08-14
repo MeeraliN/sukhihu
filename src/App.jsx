@@ -252,6 +252,7 @@ export default function App() {
           waterTargetMl={waterTargetMl}
           loggedWaterMl={loggedWaterMl}
           onLogWater={handleLogWater}
+          profile={profile}
         />
       )}
 

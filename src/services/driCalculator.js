@@ -1,12 +1,9 @@
 /**
  * USDA / National Academy of Medicine (NAM) Dietary Reference Intakes (DRI) Calculator
- * Computes exact daily targets for 40+ macronutrients, vitamins, and minerals
- * with Health Issue Target Scaling & Side-Effect Mitigation Solutions.
+ * Computes exact daily targets for 40+ macronutrients, vitamins, minerals,
+ * and DYNAMIC MEDICAL HYDRATION REQUIREMENTS.
  */
 
-/**
- * Formats any number strictly to maximum 2 decimal places
- */
 export function formatNutrientVal(val) {
   if (val === undefined || val === null || isNaN(val)) return 0;
   return Math.round(Number(val) * 100) / 100;
@@ -21,7 +18,16 @@ export function calculateDRI(profile) {
     lifeStage = 'standard', // 'standard' | 'pregnant' | 'lactating'
     activityLevel = 'moderate', // 'sedentary' | 'light' | 'moderate' | 'active' | 'extra'
     weightGoal = 'maintain', // 'loss' | 'maintain' | 'gain'
-    healthIssue = 'acne_skin' // 'acne_skin' | 'hair_fall' | 'weight_loss' | 'energy_fatigue' | etc.
+    healthIssue = 'acne_skin', // 'acne_skin' | 'hair_fall' | 'weight_loss' | 'energy_fatigue' | etc.
+    climate = 'standard', // 'standard' | 'hot'
+    medicalTreatment = 'none', // 'none' | 'renal_flush' | 'high_protein' | 'sweat_heavy'
+    routine = {
+      wakeTime: '07:00',
+      breakfastTime: '08:30',
+      lunchTime: '13:30',
+      dinnerTime: '20:30',
+      bedTime: '22:30'
+    }
   } = profile;
 
   // 1. Calculate Basal Metabolic Rate (BMR) using Mifflin-St Jeor Equation
@@ -50,9 +56,9 @@ export function calculateDRI(profile) {
   // 3. Weight Goal Calorie Adjustment
   let calories = maintenanceCalories;
   if (weightGoal === 'loss') {
-    calories = Math.round(maintenanceCalories * 0.80); // ~20% deficit (~500 kcal)
+    calories = Math.round(maintenanceCalories * 0.80);
   } else if (weightGoal === 'gain') {
-    calories = Math.round(maintenanceCalories * 1.18); // ~18% surplus (~450 kcal)
+    calories = Math.round(maintenanceCalories * 1.18);
   }
 
   // 4. Protein scaling
@@ -64,18 +70,42 @@ export function calculateDRI(profile) {
   if (lifeStage === 'pregnant' || lifeStage === 'lactating') protein += 25;
 
   // 5. Carbs & Fats
-  const carbCalories = calories * 0.50; // 50%
+  const carbCalories = calories * 0.50;
   const carbs = formatNutrientVal(carbCalories / 4);
   const fiber = formatNutrientVal((calories / 1000) * 14);
 
-  const fatCalories = calories * 0.30; // 30%
+  const fatCalories = calories * 0.30;
   const totalFat = formatNutrientVal(fatCalories / 9);
   const satFat = formatNutrientVal((calories * 0.08) / 9);
   const monoFat = formatNutrientVal((calories * 0.15) / 9);
   const polyFat = formatNutrientVal((calories * 0.07) / 9);
 
-  // Water intake (35ml per kg)
-  let waterMl = Math.round(weightKg * 35);
+  // 6. DYNAMIC PERSONALIZED WATER INTAKE CALCULATOR
+  // Base requirement: 35ml per kg of body weight
+  let calculatedWaterMl = weightKg * 35;
+
+  // Adjust for Activity Level
+  if (activityLevel === 'light') calculatedWaterMl += 350;
+  else if (activityLevel === 'moderate') calculatedWaterMl += 700;
+  else if (activityLevel === 'active' || activityLevel === 'extra') calculatedWaterMl += 1200;
+
+  // Adjust for Climate
+  if (climate === 'hot') calculatedWaterMl += 500;
+
+  // Adjust for Health Issue / Medical Treatment
+  if (healthIssue === 'acne_skin') calculatedWaterMl += 1000;
+  else if (healthIssue === 'weight_loss') calculatedWaterMl += 600;
+  else if (healthIssue === 'immunity') calculatedWaterMl += 800;
+
+  if (medicalTreatment === 'renal_flush') calculatedWaterMl += 1200;
+  if (medicalTreatment === 'high_protein') calculatedWaterMl += 800;
+  if (medicalTreatment === 'sweat_heavy') calculatedWaterMl += 1000;
+
+  // Adjust for Life Stage
+  if (lifeStage === 'pregnant') calculatedWaterMl += 300;
+  if (lifeStage === 'lactating') calculatedWaterMl += 700;
+
+  let waterMl = Math.round(calculatedWaterMl);
 
   const isMale = sex === 'male';
 
@@ -90,7 +120,7 @@ export function calculateDRI(profile) {
     monoFat: { target: monoFat, unit: 'g', label: 'Monounsaturated Fat', cat: 'macro' },
     polyFat: { target: polyFat, unit: 'g', label: 'Polyunsaturated Fat', cat: 'macro' },
     sugar: { target: 25, unit: 'g', label: 'Added Sugar Max', cat: 'macro', upperLimit: 36 },
-    water: { target: waterMl, unit: 'ml', label: 'Water', cat: 'macro' },
+    water: { target: waterMl, unit: 'ml', label: 'Water (Personalized)', cat: 'macro' },
     omega3: { target: isMale ? 1.6 : 1.1, unit: 'g', label: 'Omega-3 (ALA)', cat: 'macro' },
     omega6: { target: isMale ? 17 : 12, unit: 'g', label: 'Omega-6 (LA)', cat: 'macro' },
     cholesterol: { target: 200, unit: 'mg', label: 'Cholesterol Max', cat: 'macro', upperLimit: 300 },
@@ -127,22 +157,21 @@ export function calculateDRI(profile) {
     molybdenum: { target: 45, unit: 'mcg', label: 'Molybdenum', cat: 'mineral', upperLimit: 2000 }
   };
 
-  // 6. ISSUE-SPECIFIC THERAPEUTIC TARGET SCALING & SIDE-EFFECT MITIGATION
+  // ISSUE-SPECIFIC THERAPEUTIC TARGET SCALING & SIDE-EFFECT MITIGATION
   let issueMitigationNote = null;
 
   if (healthIssue === 'acne_skin') {
-    baseTargets.vitaminC.target = 500; // Therapeutic dose for skin collagen & acne inflammation
-    baseTargets.water.target += 1000; // Increase water to 3500ml
+    baseTargets.vitaminC.target = 500;
     issueMitigationNote = {
       issueName: 'Clear Skin & Anti-Acne',
       adjustedNutrient: 'Vitamin C increased to 500mg',
       sideEffect: 'High Vitamin C can increase renal oxalate excretion & risk kidney stones.',
-      mitigationSolution: '🛡️ Mitigation Solution: Water intake target automatically scaled up to 3,500ml/day to ensure complete renal flushing and eliminate kidney stone risks.'
+      mitigationSolution: `🛡️ Mitigation Solution: Water intake target scaled to ${waterMl}ml/day based on weight (${weightKg}kg), activity (${activityLevel}) & renal clearance.`
     };
   } else if (healthIssue === 'hair_fall') {
-    baseTargets.biotinB7.target = 100; // High therapeutic biotin
+    baseTargets.biotinB7.target = 100;
     baseTargets.zinc.target = 15;
-    baseTargets.copper.target = 1.4; // Counterbalance zinc
+    baseTargets.copper.target = 1.4;
     issueMitigationNote = {
       issueName: 'Hair Growth & Anti-Hair Fall',
       adjustedNutrient: 'Biotin increased to 100mcg & Zinc to 15mg',
@@ -151,21 +180,11 @@ export function calculateDRI(profile) {
     };
   } else if (healthIssue === 'weight_loss') {
     baseTargets.fiber.target += 8;
-    baseTargets.water.target += 600;
     issueMitigationNote = {
       issueName: 'Weight Loss & Fat Burn',
       adjustedNutrient: 'Fiber target increased to ' + baseTargets.fiber.target + 'g',
       sideEffect: 'Caloric deficit & high dietary fiber can cause GI motility slowdown or constipation.',
-      mitigationSolution: '🛡️ Mitigation Solution: Fluid hydration target increased to prevent gastrointestinal stress and maintain BMR fat oxidation.'
-    };
-  } else if (healthIssue === 'energy_fatigue') {
-    baseTargets.vitaminB12.target = 5.0;
-    baseTargets.magnesium.target = 450;
-    issueMitigationNote = {
-      issueName: 'Energy Boost & Anti-Fatigue',
-      adjustedNutrient: 'B12 increased to 5.0mcg & Magnesium to 450mg',
-      sideEffect: 'High Magnesium can cause digestive sensitivity if unbuffered.',
-      mitigationSolution: '🛡️ Mitigation Solution: B-complex co-factors and fluid balance adjusted to ensure optimal mitochondrial ATP conversion without stomach distress.'
+      mitigationSolution: `🛡️ Mitigation Solution: Fluid hydration target increased to ${waterMl}ml to prevent gastrointestinal stress and maintain BMR fat oxidation.`
     };
   }
 
@@ -183,9 +202,6 @@ export function calculateDRI(profile) {
   };
 }
 
-/**
- * Returns Color Status for a given nutrient intake percentage vs target
- */
 export function getNutrientStatus(current, targetObj) {
   if (!targetObj) return { color: 'slate', code: 'UNKNOWN', label: 'Normal', bg: 'bg-slate-800', text: 'text-slate-300' };
 

@@ -1,66 +1,121 @@
 import React, { useState } from 'react';
-import { Droplets, Clock, Camera, Plus, CheckCircle2, ShieldCheck, Flame, Info, Sparkles, X } from 'lucide-react';
+import { Droplets, Clock, Camera, Plus, CheckCircle2, ShieldCheck, Flame, Info, Sparkles, X, BellRing, Volume2 } from 'lucide-react';
 
-export default function WaterTrackerModal({ onClose, waterTargetMl = 3500, loggedWaterMl = 0, onLogWater }) {
+export default function WaterTrackerModal({
+  onClose,
+  waterTargetMl = 3500,
+  loggedWaterMl = 0,
+  onLogWater,
+  profile
+}) {
   const [customMl, setCustomMl] = useState(250);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [activeTab, setActiveTab] = useState('tracker'); // 'tracker' | 'schedule'
+  const [remindersEnabled, setRemindersEnabled] = useState(false);
 
   const remainingWaterMl = Math.max(0, waterTargetMl - loggedWaterMl);
   const waterPct = Math.min(100, Math.round((loggedWaterMl / waterTargetMl) * 100));
 
-  // CHRONOBIOLOGICAL HYDRATION TIMINGS & BIOLOGICAL PURPOSE SCHEDULE
+  // Extract user's personalized routine timings (or default fallback)
+  const wakeTime = profile?.routine?.wakeTime || '07:00';
+  const breakfastTime = profile?.routine?.breakfastTime || '08:30';
+  const lunchTime = profile?.routine?.lunchTime || '13:30';
+  const dinnerTime = profile?.routine?.dinnerTime || '20:30';
+  const bedTime = profile?.routine?.bedTime || '22:30';
+
+  // Calculate proportional water volumes for each slot based on total target
+  const slot1 = Math.round(waterTargetMl * 0.15); // Wake up
+  const slot2 = Math.round(waterTargetMl * 0.10); // Pre-breakfast
+  const slot3 = Math.round(waterTargetMl * 0.15); // Mid-morning focus
+  const slot4 = Math.round(waterTargetMl * 0.15); // Pre-lunch
+  const slot5 = Math.round(waterTargetMl * 0.15); // Afternoon anti-fatigue
+  const slot6 = Math.round(waterTargetMl * 0.15); // Pre-dinner
+  const slot7 = Math.round(waterTargetMl * 0.15); // Pre-bedtime
+
+  // DYNAMIC PERSONALIZED HYDRATION SCHEDULE BASED ON USER ROUTINE
   const hydrationSchedule = [
     {
-      timeStr: '7:00 AM (Upon Waking)',
-      amountMl: 500,
+      timeStr: `${wakeTime} (Upon Waking)`,
+      amountMl: slot1,
       icon: '🌅',
       purpose: 'Flush overnight metabolic toxins, activate internal organs & kickstart digestive peristalsis.',
-      bestTip: 'Drink warm or room-temperature water before coffee or tea.'
+      bestTip: 'Drink warm or room-temperature water immediately upon waking.'
     },
     {
-      timeStr: '8:00 AM (30 Mins Before Breakfast)',
-      amountMl: 250,
+      timeStr: `${breakfastTime} (30 Mins Before Breakfast)`,
+      amountMl: slot2,
       icon: '🍳',
       purpose: 'Prepare gastric mucosal lining & hydrolyze digestive enzymes for peak nutrient breakdown.',
-      bestTip: 'Avoid drinking large amounts during the meal to prevent enzyme dilution.'
+      bestTip: 'Avoid gulping large amounts during eating to prevent gastric enzyme dilution.'
     },
     {
-      timeStr: '11:00 AM (Mid-Morning Brain Focus)',
-      amountMl: 350,
+      timeStr: '11:00 AM (Mid-Morning Focus)',
+      amountMl: slot3,
       icon: '🧠',
       purpose: 'Prevent micro-dehydration, eliminate brain fog, and maintain neuronal synaptic speed.',
       bestTip: 'Ideal time to add a pinch of electrolyte salts or lemon if sweating.'
     },
     {
-      timeStr: '1:00 PM (30 Mins Before Lunch)',
-      amountMl: 250,
+      timeStr: `${lunchTime} (30 Mins Before Lunch)`,
+      amountMl: slot4,
       icon: '🥗',
       purpose: 'Lubricate digestive canal & naturally curb appetite to prevent overeating.',
       bestTip: 'Sip slowly 30 minutes prior to your main meal.'
     },
     {
-      timeStr: '4:00 PM (Afternoon Anti-Fatigue)',
-      amountMl: 350,
+      timeStr: '04:00 PM (Afternoon Anti-Fatigue)',
+      amountMl: slot5,
       icon: '⚡',
       purpose: 'Flush renal metabolic waste, revive cellular ATP energy & prevent afternoon sluggishness.',
       bestTip: 'Replaces afternoon sugar cravings with cellular hydration.'
     },
     {
-      timeStr: '7:30 PM (30 Mins Before Dinner)',
-      amountMl: 250,
+      timeStr: `${dinnerTime} (30 Mins Before Dinner)`,
+      amountMl: slot6,
       icon: '🍛',
       purpose: 'Balance gastric acid pH & support micronutrient assimilation during evening meal.',
       bestTip: 'Prepares the stomach for evening digestion.'
     },
     {
-      timeStr: '10:00 PM (1 Hour Before Bed)',
-      amountMl: 250,
+      timeStr: `${bedTime} (1 Hour Before Bed)`,
+      amountMl: slot7,
       icon: '🌙',
       purpose: 'Prevent nocturnal blood viscosity, lower stroke risk & support overnight tissue repair.',
       bestTip: 'Drink 1 hour before sleeping to avoid nighttime sleep disruption (nocturia).'
     }
   ];
+
+  const handleToggleReminders = () => {
+    if (!remindersEnabled) {
+      if ('Notification' in window) {
+        Notification.requestPermission().then((perm) => {
+          if (perm === 'granted') {
+            setRemindersEnabled(true);
+            new Notification('sukhihu Hydration Alarm Enabled', {
+              body: `Water reminders set based on your routine timings (${wakeTime} - ${bedTime}).`,
+              icon: '/icon-192.png'
+            });
+          }
+        });
+      } else {
+        setRemindersEnabled(true);
+      }
+
+      // Play audio chime test
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.3);
+    } else {
+      setRemindersEnabled(false);
+    }
+  };
 
   const handlePhotoUpload = (e) => {
     const file = e.target.files[0];
@@ -89,8 +144,8 @@ export default function WaterTrackerModal({ onClose, waterTargetMl = 3500, logge
               <Droplets className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-extrabold text-lg text-slate-100">Water & Hydration Tracker</h3>
-              <p className="text-xs text-cyan-400 font-semibold">Real-Time Daily Water Target</p>
+              <h3 className="font-extrabold text-lg text-slate-100">Personalized Hydration</h3>
+              <p className="text-xs text-cyan-400 font-semibold">{waterTargetMl} ml Dynamic Target</p>
             </div>
           </div>
           <button
@@ -122,7 +177,7 @@ export default function WaterTrackerModal({ onClose, waterTargetMl = 3500, logge
             }`}
           >
             <Clock className="w-3.5 h-3.5" />
-            <span>Optimal Timings & Purpose</span>
+            <span>Timings & Alarms</span>
           </button>
         </div>
 
@@ -145,7 +200,7 @@ export default function WaterTrackerModal({ onClose, waterTargetMl = 3500, logge
               </div>
 
               <div className="flex items-center justify-between text-[11px] text-slate-400">
-                <span>{waterPct}% of Target Met</span>
+                <span>{waterPct}% Target Met</span>
                 <span className="text-emerald-400 font-bold">{remainingWaterMl} ml Remaining</span>
               </div>
             </div>
@@ -230,9 +285,27 @@ export default function WaterTrackerModal({ onClose, waterTargetMl = 3500, logge
 
         {activeTab === 'schedule' && (
           <div className="space-y-3">
-            <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-xs text-cyan-200 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-cyan-400 shrink-0" />
-              <span>Optimal Chronobiological Hydration Timings & Biological Purpose</span>
+            
+            {/* Alarm Reminder Toggle Button */}
+            <div className="p-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-between">
+              <div className="flex items-center gap-2.5 text-xs text-cyan-200">
+                <BellRing className="w-4 h-4 text-cyan-400 shrink-0" />
+                <div>
+                  <span className="font-extrabold text-slate-100 block">Hydration Push Alarms & Sound</span>
+                  <span className="text-[10px] text-cyan-300">Set automatically to your routine ({wakeTime} - {bedTime})</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleToggleReminders}
+                className={`px-3 py-1.5 rounded-xl text-xs font-black transition ${
+                  remindersEnabled
+                    ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
+                    : 'bg-slate-950 text-slate-400 border border-slate-800'
+                }`}
+              >
+                {remindersEnabled ? '🔔 Alarms ON' : '🔕 Enable Alarms'}
+              </button>
             </div>
 
             {/* Hydration Schedule List */}
