@@ -1,53 +1,33 @@
 /**
- * Instant 1-Click Universal App Installer
- * Immediately triggers PWA browser installation or Android APK download
- * without requiring modal confirmation dialogs.
+ * Direct Instant Executable & App File Downloader
+ * Directly starts binary file download (.exe for Windows, .apk for Android)
+ * with zero instructions or popups.
  */
 
 export function triggerInstantAppInstall() {
-  // 1. Check if browser native PWA install prompt is ready
-  if (window.deferredPwaPrompt) {
-    try {
-      window.deferredPwaPrompt.prompt();
-      window.deferredPwaPrompt.userChoice.then((choiceResult) => {
-        if (choiceResult.outcome === 'accepted') {
-          console.log('User accepted PWA installation');
-        }
-        window.deferredPwaPrompt = null;
-      });
-      return;
-    } catch {
-      // Fallback to direct download
-    }
-  }
-
-  // 2. Auto-detect OS & Device Type
   const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-  const platform = navigator.platform || '';
-
   const isAndroid = /android/i.test(userAgent);
-  const isIOS = /iPad|iPhone|iPod/.test(userAgent) || (platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isWindows = /win/i.test(navigator.platform || userAgent);
+
+  let downloadFileName = 'sukhihu-setup.exe';
+  let downloadUrl = './sukhihu-setup.exe';
 
   if (isAndroid) {
-    // Direct Android APK File Download
-    const a = document.createElement('a');
-    a.href = './sukhihu-android.apk';
-    a.download = 'sukhihu-android.apk';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  } else if (isIOS) {
-    alert('📱 To install sukhihu on iPhone/iPad:\n\n1. Tap the Share icon in Safari\n2. Scroll down and tap "Add to Home Screen"');
+    downloadFileName = 'sukhihu.apk';
+    downloadUrl = './sukhihu.apk';
+  } else if (isWindows) {
+    downloadFileName = 'sukhihu-setup.exe';
+    downloadUrl = './sukhihu-setup.exe';
   } else {
-    // Desktop (Windows x64/32, Mac, Linux)
-    alert('🖥️ To Install sukhihu on Desktop:\n\n1. Click the Install App icon in your browser address bar (top right)\n2. Or open Browser Menu (⋮) > "Install sukhihu App"');
+    downloadFileName = 'sukhihu-app-installer.zip';
+    downloadUrl = './sukhihu-app-installer.zip';
   }
-}
 
-// Global PWA Event Listener Registration
-if (typeof window !== 'undefined') {
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    window.deferredPwaPrompt = e;
-  });
+  // Create an invisible link element to force immediate browser file download
+  const link = document.createElement('a');
+  link.href = downloadUrl;
+  link.setAttribute('download', downloadFileName);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
