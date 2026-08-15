@@ -1,5 +1,6 @@
 import React from 'react';
 import { Camera, User, Crown, Clock, Droplets, Sparkles, Flame, Download } from 'lucide-react';
+import { triggerInstantAppInstall } from '../services/appInstaller';
 
 export default function Header({
   trialStatus,
@@ -7,7 +8,6 @@ export default function Header({
   onOpenCamera,
   onOpenPaywall,
   onOpenWaterModal,
-  onOpenDownloadModal,
   loggedWaterMl = 0,
   waterTargetMl = 3500,
   loggedCalories = 0,
@@ -82,11 +82,11 @@ export default function Header({
           <span>{loggedCalories}/{targetCalories} kcal</span>
         </div>
 
-        {/* SMART APP DOWNLOAD BUTTON */}
+        {/* INSTANT 1-CLICK APP DOWNLOAD BUTTON */}
         <button
           type="button"
-          onClick={onOpenDownloadModal}
-          className="px-2 py-1 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-[11px] font-black flex items-center gap-1 transition shadow-md shadow-emerald-500/20"
+          onClick={triggerInstantAppInstall}
+          className="px-2 py-1 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-[11px] font-black flex items-center gap-1 transition shadow-md shadow-emerald-500/20 active:scale-95"
           title="Download App for your Device"
         >
           <Download className="w-3.5 h-3.5 stroke-[3]" />
