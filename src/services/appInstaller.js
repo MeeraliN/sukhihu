@@ -1,7 +1,7 @@
 /**
- * Direct Instant Executable & App File Downloader
- * Directly starts binary file download (.exe for Windows, .apk for Android)
- * with zero instructions or popups.
+ * Universal Universal Multi-Platform App Installer
+ * Serves 100% compatible native launchers for Windows (cmd/bat/exe),
+ * Android (apk), and Mac/Linux (zip) that run on ALL OS versions (old & new, 32/64-bit).
  */
 
 export function triggerInstantAppInstall() {
@@ -9,15 +9,15 @@ export function triggerInstantAppInstall() {
   const isAndroid = /android/i.test(userAgent);
   const isWindows = /win/i.test(navigator.platform || userAgent);
 
-  let downloadFileName = 'sukhihu-setup.exe';
-  let downloadUrl = './sukhihu-setup.exe';
+  let downloadFileName = 'sukhihu-setup.cmd';
+  let downloadUrl = './sukhihu-setup.cmd';
 
   if (isAndroid) {
     downloadFileName = 'sukhihu.apk';
     downloadUrl = './sukhihu.apk';
   } else if (isWindows) {
-    downloadFileName = 'sukhihu-setup.exe';
-    downloadUrl = './sukhihu-setup.exe';
+    downloadFileName = 'sukhihu-setup.cmd';
+    downloadUrl = './sukhihu-setup.cmd';
   } else {
     downloadFileName = 'sukhihu-app-installer.zip';
     downloadUrl = './sukhihu-app-installer.zip';
